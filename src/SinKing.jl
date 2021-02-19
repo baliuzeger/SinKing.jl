@@ -1,21 +1,17 @@
 module SinKing
 
+module AgentParts
+include("./agent_parts/iz_neuron.jl")
+include("./agent_parts/conductance_injection.jl")
+include("./agent_parts/markram_transmitter.jl")
+end
+
+module Agent
+include(".agents/iz_cond_mrkrm.jl")
+end
+
 abstract type AgentStates{T <: AbstractFloat} end
 abstract type Agent{S <: AgentStates} end
-
-mutable struct IZStates{T <: AbstractFloat} <: AgentStates{T}
-    iz_u::T
-    iz_v::T
-    g_ampa::T
-    g_nmda::T
-    g_gaba_a::T
-    g_gaba_b::T
-    exct_mrkrm_r::T
-    exct_mrkrm_w::T
-    inhbt_mrkrm_r::T
-    inhbt_mrkrm_w::T
-    idle_end::Union{Nothing, T}
-end
 
 struct IZParams{T <: AbstractFloat}
     iz_a::T
@@ -63,7 +59,7 @@ end
 
 # accept(acceptor) return [] of msgs
 function act(agent::IZNeuron, t, dt, task_handler)
-    if ! isnothing(agent.states.idle_end) && agent.states.idle_end <= t
+    if isnothing(agent.states.idle_end) || agent.states.idle_end <= t
         delta_exct, delta_inhbt, delta_potential = reduce(
             acc, x -> (acc[1] + x[1], acc[2] + x[2], acc[3] + x[3]),
             vcat(accept(agent.acceptors)),
