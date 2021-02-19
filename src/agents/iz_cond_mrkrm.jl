@@ -6,4 +6,10 @@ struct IZCondMrkrmStates{T <: AbstractFloat} <: AgentStates{T}
     mrkrm::MarkramStates{T}
 end
 
+struct IZCondMrkrmParams{T <: AbstractFloat} <: AgentStates{T}
+    iz::IZParams
+    cond::ConductanceParams
+    mrkrm::Markramparams
+end
+
 end

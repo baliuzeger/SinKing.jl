@@ -6,4 +6,12 @@ struct IZStates{T <: AbstractFloat}
     idle_end::Union{Nothing, T}
 end
 
+struct IZParams{T <: AbstractFloat}
+    a::T
+    b::T
+    c::T
+    d::T
+    tau_refraction::T
+end
+
 end
