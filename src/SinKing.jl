@@ -1,6 +1,9 @@
 module SinKing
 
-mutable struct IZStates{T <: AbstractFloat}
+abstract type AgentStates{T <: AbstractFloat} end
+abstract type Agent{S <: AgentStates} end
+
+mutable struct IZStates{T <: AbstractFloat} <: AgentStates{T}
     iz_u::T
     iz_v::T
     g_ampa::T
@@ -40,7 +43,7 @@ struct TimedTransmitter
     dosage
 end
 
-struct IZNeuron{T <: AbstractFloat}
+struct IZNeuron{T <: AbstractFloat} <: Agent{IZStates{T}}
     states::IZStates{T}
     params::IZParams{T}
     donors::Vector{Donor}
@@ -50,12 +53,16 @@ end
 struct LIFNeuron
 end
 
-function evolve(agent::IZNeuron, dt, modifier, task_handler) # should extract the pure IZ model part from act
+# function simple_modify_fn(agent: Agent, states)
+#     agent.states = states
+# end
+
+function evolve(agent::IZNeuron, dt, task_handler) # should extract the pure IZ model part from act
     
 end
 
 # accept(acceptor) return [] of msgs
-function act(agent::IZNeuron, t, dt, modifier, task_handler)
+function act(agent::IZNeuron, t, dt, task_handler)
     if ! isnothing(agent.states.idle_end) && agent.states.idle_end <= t
         delta_exct, delta_inhbt, delta_potential = reduce(
             acc, x -> (acc[1] + x[1], acc[2] + x[2], acc[3] + x[3]),
@@ -63,17 +70,17 @@ function act(agent::IZNeuron, t, dt, modifier, task_handler)
             (0., 0., 0.,)
         )
         
-        modifier(agent, IZStates(agent.states.iz_u,
-                                 agent.states.iz_v,
-                                 agent.states.g_ampa * (1 - dt / agent.params.tau_ampa) + delta_exct,
-                                 agent.states.g_nmda * (1 - dt / agent.params.tau_nmda) + delta_exct,
-                                 agent.states.g_gaba_a * (1 - dt / agent.params.tau_gaba_a) + delta_inhbt,
-                                 agent.states.g_gaba_b * (1 - dt / agent.params.tau_gaba_b) + delta_inhbt,
-                                 agent.states.exct_mrkrm_r,
-                                 agent.states.exct_mrkrm_w,
-                                 agent.states.inhbt_mrkram_r,
-                                 agent.states.inhbt_mrkram_w,
-                                 nothing))
+        agent.states = IZStates(agent.states.iz_u,
+                                agent.states.iz_v,
+                                agent.states.g_ampa * (1 - dt / agent.params.tau_ampa) + delta_exct,
+                                agent.states.g_nmda * (1 - dt / agent.params.tau_nmda) + delta_exct,
+                                agent.states.g_gaba_a * (1 - dt / agent.params.tau_gaba_a) + delta_inhbt,
+                                agent.states.g_gaba_b * (1 - dt / agent.params.tau_gaba_b) + delta_inhbt,
+                                agent.states.exct_mrkrm_r,
+                                agent.states.exct_mrkrm_w,
+                                agent.states.inhbt_mrkram_r,
+                                agent.states.inhbt_mrkram_w,
+                                nothing)
 
         stts = agent.states
         prms = agent.params
@@ -87,17 +94,17 @@ function act(agent::IZNeuron, t, dt, modifier, task_handler)
             new_u += prms.iz_d
             rw_exct = stts.exct_mrkrm_r * stts.exct_mrkrm_w
             rw_inhbt = stts.inhbt_mrkrm_r * stts.inhbt_mrkrm_w
-            modifier(agent, IZStates(new_u,
-                                     new_v,
-                                     agent.states.g_ampa,
-                                     agent.states.g_nmdap,
-                                     agent.states.g_gaba_a,
-                                     agent.states.g_gaba_b,
-                                     agent.states.exct_mrkrm_r, # update
-                                     agent.states.exct_mrkrm_w,
-                                     agent.states.inhbt_mrkram_r,
-                                     agent.states.inhbt_mrkram_w,
-                                     t + tau_refraction))
+            agent.states = IZStates(new_u,
+                            new_v,
+                            agent.states.g_ampa,
+                            agent.states.g_nmdap,
+                            agent.states.g_gaba_a,
+                            agent.states.g_gaba_b,
+                            agent.states.exct_mrkrm_r, # update
+                            agent.states.exct_mrkrm_w,
+                            agent.states.inhbt_mrkram_r,
+                            agent.states.inhbt_mrkram_w,
+                            t + tau_refraction)
             for dnr in agent.donors
                 x =1
             end
