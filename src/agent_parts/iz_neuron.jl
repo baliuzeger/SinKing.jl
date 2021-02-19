@@ -14,4 +14,8 @@ struct IZParams{T <: AbstractFloat}
     tau_refraction::T
 end
 
+function evolve(agent::IZNeuron, dt, task_handler) # should extract the pure IZ model part from act
+    
+end
+
 end
