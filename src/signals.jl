@@ -2,12 +2,17 @@ module Signals
 
 struct TimedExctDeltaCond
     time
-    delta_exct
+    delta_cond
 end
 
 struct TimedInhbtDeltaCond
     time
-    delta_inhbt
+    delta_cond
+end
+
+struct TimedDeltaCond
+    time
+    delta_cond
 end
 
 struct TimedDeltaV
