@@ -18,6 +18,6 @@ struct fire(t, dt, states, params, updater, donors)
             dt * (params.u - states.w) / params.f + params.u * (1 - states.w))
 
     for dnr in donors
-        push_signal(dnr, TimedDeltaCond(t, rw))
+        put_signal(dnr.putter, TimedDeltaCond(t, rw))
     end
 end

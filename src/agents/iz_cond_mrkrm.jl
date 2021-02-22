@@ -30,9 +30,14 @@ function act(agent::IZCondMrkrmAgent, t, dt, task_handler)
     end
     
     function inject_fn()
-        delta_v = sum(vcat(accept(agent.acceptors_t_delta_v, t)))
-        delta_exct = sum(vcat(accept(agent.acceptors_t_exct_delta_g, t)))
-        delta_inhbt = sum(vcat(accept(agent.acceptors_t_inhbt_delta_g, t)))
+        agent.acceptors_t_delta_v.taker(t)
+        agent.acceptors_t_exct_delta_g.taker(t)
+        agent.acceptors_t_inhbt_delta_g.taker(t)
+
+        delta_v = sum(vcat(agent.acceptors_t_delta_v.taker(t)))
+        delta_exct = sum(vcat(agent.acceptors_t_exct_delta_g.taker(t)))
+        delta_inhbt = sum(vcat(agent.acceptors_t_inhbt_delta_g.taker(t)))
+        
         i_syn = gen_syn_current(
             dt, delta_exct, delta_inhbt, agent.states.cond, agent.params.cond, agent.state.iz.v, cond_updater
         )
@@ -47,7 +52,8 @@ function act(agent::IZCondMrkrmAgent, t, dt, task_handler)
         fire(t, dt, agent.states.mrkrm, agent.params.mrkrm, agent.donors_t_delta_g)
     end
 
-    function task_fn()
+    function task_fn(next_t)
+        put_task(next_t, (t, dt) -> act(agent, t, dt, task_handler))
     end
     
     evolve(t, dt, agent.states.iz, agent.params.iz, inject_fn, iz_updater, fire_fn, task_fn)
