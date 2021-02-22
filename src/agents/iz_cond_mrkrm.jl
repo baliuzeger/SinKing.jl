@@ -15,7 +15,8 @@ end
 struct IZCondMrkrmAgent{T <: AbstractFloat} <: Agent{IZStates{T}}
     states::IZCondMrkrmStates{T}
     params::IZCondMrkrmParams{T}
-    donors::Vector{Donor}
+    donors_t_delta_v::Vector{DonorTimedDeltaV}
+    donors_t_delta_g::Vector{DonorTimedDeltaCond}
     acceptors_t_delta_v::Vector{AcceptorTimedDeltaV}
     acceptors_t_exct_delta_g::Vector{AcceptorTimedExctDeltaCond}
     acceptors_t_inhbt_delta_g::Vector{AcceptorTimedInhbtDeltaCond}
@@ -42,6 +43,10 @@ function act(agent::IZCondMrkrmAgent, t, dt, task_handler)
         agent.states.iz = iz_states
     end
 
+    function fire_fn(t, dt)
+        
+    end
+    
     evolve(t, dt, agent.states.iz, agent.params.iz, inject_fn, iz_updater, fire_fn, task_fn)
     
 end

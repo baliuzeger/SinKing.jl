@@ -16,20 +16,16 @@ struct Markramparams{T <: AbstractFloat}
     inhbt_u::T
 end
 
-struct fire(t, dt)
-    rw_exct = stts.exct_mrkrm_r * stts.exct_mrkrm_w
-    rw_inhbt = stts.inhbt_mrkrm_r * stts.inhbt_mrkrm_w
-    agent.states = IZStates(new_u,
-                            new_v,
-                            agent.states.g_ampa,
-                            agent.states.g_nmdap,
-                            agent.states.g_gaba_a,
-                            agent.states.g_gaba_b,
-                            agent.states.exct_mrkrm_r, # update
-                            agent.states.exct_mrkrm_w,
-                            agent.states.inhbt_mrkram_r,
-                            agent.states.inhbt_mrkram_w,
-                            t + tau_refraction)
+struct fire(t, dt, states, params, updater, exct_donors, inhbt_donors)
+    rw_exct = states.exct_r * states.exct_w
+    rw_inhbt = states.inhbt_r * states.inhbt_w
+    
+    updater(dt * (1 - states.exct_r) / params.exct_d - rw_exct,
+            dt * (params.exct_u - states.exct_w) / params.exct_f + params.exct_u * (1 - states.exct_w),
+            dt * (1 - states.inhbt_r) / params.inhbt_d - rw_inhbt,
+            dt * (params.inhbt_u - states.inhbt_w) / params.inhbt_f + params.inhbt_u * (1 - states.inhbt_w))
+    
+    
     for dnr in agent.donors
         x =1
     end
