@@ -34,9 +34,20 @@ function act(agent::IZCondMrkrmAgent, t, dt, task_handler)
         agent.acceptors_t_exct_delta_g.taker(t)
         agent.acceptors_t_inhbt_delta_g.taker(t)
 
-        delta_v = sum(vcat(agent.acceptors_t_delta_v.taker(t)))
-        delta_exct = sum(vcat(agent.acceptors_t_exct_delta_g.taker(t)))
-        delta_inhbt = sum(vcat(agent.acceptors_t_inhbt_delta_g.taker(t)))
+        delta_v = reduce((acc, x) -> acc + x.delta_v,
+                         vcat(map(accptr -> take_due_signals(t, accptr),
+                                  agent.acceptors_t_delta_v)),
+                         0.)
+
+        delta_exct = reduce((acc, x) -> acc + x.delta_cond,
+                            vcat(map(accptr -> take_due_signals(t, accptr),
+                                     agent.acceptors_t_exct_delta_g)),
+                            0.)
+
+        delta_inhbt = reduce((acc, x) -> acc + x.delta_cond,
+                             vcat(map(accptr -> take_due_signals(t, accptr),
+                                      agent.acceptors_t_inhbt_delta_g)),
+                             0.)
         
         i_syn = gen_syn_current(
             dt, delta_exct, delta_inhbt, agent.states.cond, agent.params.cond, agent.state.iz.v, cond_updater
@@ -48,7 +59,7 @@ function act(agent::IZCondMrkrmAgent, t, dt, task_handler)
         agent.states.iz = iz_states
     end
 
-    function fire_fn(t, dt)
+    function fire_fn(t, dt) # fix here to match Donor!!!
         fire(t, dt, agent.states.mrkrm, agent.params.mrkrm, agent.donors_t_delta_g)
     end
 
