@@ -1,8 +1,8 @@
 module IZNeuron
 
 struct IZStates{T <: AbstractFloat}
-    iz_v::T
-    iz_u::T
+    v::T
+    u::T
     idle_end::Union{Nothing, T}
 end
 

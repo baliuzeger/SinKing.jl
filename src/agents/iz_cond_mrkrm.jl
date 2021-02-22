@@ -16,16 +16,34 @@ struct IZCondMrkrmAgent{T <: AbstractFloat} <: Agent{IZStates{T}}
     states::IZCondMrkrmStates{T}
     params::IZCondMrkrmParams{T}
     donors::Vector{Donor}
-    acceptors::Vector{Acceptor}
+    acceptors_t_delta_v::Vector{AcceptorTimedDeltaV}
+    acceptors_t_exct_delta_g::Vector{AcceptorTimedExctDeltaCond}
+    acceptors_t_inhbt_delta_g::Vector{AcceptorTimedInhbtDeltaCond}
 end
 
 # accept(acceptor) return [] of msgs
 function act(agent::IZCondMrkrmAgent, t, dt, task_handler)
-    inject_fn = () -> reduce(
-        acc, x -> (acc[1] + x[1], acc[2] + x[2], acc[3] + x[3]),
-        vcat(accept(agent.acceptors)),
-        (0., 0., 0.,)
-    )
+
+    function cond_updater(cond_states)
+        agent.states.cond = cond_states
+    end
+    
+    function inject_fn()
+        delta_v = sum(vcat(accept(agent.acceptors_t_delta_v, t)))
+        delta_exct = sum(vcat(accept(agent.acceptors_t_exct_delta_g, t)))
+        delta_inhbt = sum(vcat(accept(agent.acceptors_t_inhbt_delta_g, t)))
+        i_syn = gen_syn_current(
+            dt, delta_exct, delta_inhbt, agent.states.cond, agent.params.cond, agent.state.iz.v, cond_updater
+        )
+        return (i_syn, delta_v)
+    end
+
+    function iz_updater(iz_states)
+        agent.states.iz = iz_states
+    end
+
+    evolve(t, dt, agent.states.iz, agent.params.iz, inject_fn, iz_updater, fire_fn, task_fn)
+    
 end
 
 end
