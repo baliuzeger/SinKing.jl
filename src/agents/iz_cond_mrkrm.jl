@@ -44,7 +44,10 @@ function act(agent::IZCondMrkrmAgent, t, dt, task_handler)
     end
 
     function fire_fn(t, dt)
-        
+        fire(t, dt, agent.states.mrkrm, agent.params.mrkrm, agent.donors_t_delta_g)
+    end
+
+    function task_fn()
     end
     
     evolve(t, dt, agent.states.iz, agent.params.iz, inject_fn, iz_updater, fire_fn, task_fn)
