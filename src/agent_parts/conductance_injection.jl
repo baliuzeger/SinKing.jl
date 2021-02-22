@@ -14,4 +14,21 @@ struct ConductanceParams{T <: AbstractFloat}
     tau_gaba_b::T
 end
 
+function gen_syn_current(dt,
+                         delta_exct,
+                         delta_inhbt,
+                         states::ConductanceStates,
+                         states::ConductanceParams,
+                         state_v::AbstractFloat,
+                         updater)
+
+    states = ConductanceStates(agent.states.g_ampa * (1 - dt / agent.params.tau_ampa) + delta_exct,
+                               agent.states.g_nmda * (1 - dt / agent.params.tau_nmda) + delta_exct,
+                               agent.states.g_gaba_a * (1 - dt / agent.params.tau_gaba_a) + delta_inhbt,
+                               agent.states.g_gaba_b * (1 - dt / agent.params.tau_gaba_b) + delta_inhbt)
+    updater(states)
+    return stts.g_ampa * state_v +
+        stts.g_nmda * state_v * ((state_v + 80) / 60)^2 / (1 + ((state_v + 80) / 60)^2) +
+        stts.g_gaba_a * (state_v + 70) + stts.g_gaba_b(state_v + 90)
+
 end
