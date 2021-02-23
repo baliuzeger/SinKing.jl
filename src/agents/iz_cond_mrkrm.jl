@@ -25,7 +25,7 @@ struct IZCondMrkrmAgent{T <: AbstractFloat} <: Agent{IZStates{T}}
 end
 
 # accept(acceptor) return [] of msgs
-function act(agent::IZCondMrkrmAgent, t, dt, task_handler)
+function act(agent::IZCondMrkrmAgent, t, dt, put_task)
 
     function cond_update(cond_states::ConductanceStates)
         agent.states.cond = cond_states
@@ -71,15 +71,22 @@ function act(agent::IZCondMrkrmAgent, t, dt, task_handler)
     
     function fire_fn(t, dt)
         fire(t, dt, agent.states.mrkrm, agent.params.mrkrm, mrkrm_update, put_mrkrm_signal)
-        foreach(dnr -> dnr.put(TimedDelta(t, 1.0)), agent.donors_simple)
-    end
-
-    function task_fn(next_t)
-        put_task(next_t, (t, dt) -> act(agent, t, dt, task_handler))
+        foreach(dnr -> put_task(t + dt, dnr.address), agent.donors_mrkrm)
+        for dnr in agent.donors_simple
+            dnr.put(TimedDelta(t, 1.0))
+            put_task(t + dt, dnr.address)
+        end
     end
     
-    evolve(t, dt, agent.states.iz, agent.params.iz, inject_fn, iz_update, fire_fn, task_fn)
+    evolve(t,
+           dt,
+           agent.states.iz,
+           agent.params.iz,
+           inject_fn,
+           iz_update,
+           fire_fn,
+           t -> put_task(t, agent.Address))
     
 end
 
-end
+end # Module end

@@ -1,5 +1,10 @@
 module Types
 
+struct Address
+    population::string
+    num::Unsigned
+end
+
 abstract type AgentStates{T <: AbstractFloat} end
 
 #abstract type Agent{S <: AgentStates} end

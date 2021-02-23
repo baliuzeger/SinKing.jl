@@ -12,7 +12,7 @@ struct LIFParams{T <: AbstractFloat}
     tau_refraction::T
 end
 
-function evolve(t, dt, states::LIFStates, params::LIFParams, inject_fn, update, fire_fn, task_fn)
+function evolve(t, dt, states::LIFStates, params::LIFParams, inject_fn, update, fire_fn, put_task)
     if isnothing(states.idle_end) || states.idle_end <= t
         i_syn, delta_v = inject_fn()
         new_v = dt * (i_syn + params.v_steady - states.v) / params.tau_leak + delta_v
@@ -20,10 +20,10 @@ function evolve(t, dt, states::LIFStates, params::LIFParams, inject_fn, update, 
             fire_fn(t, dt)
             idle_end = t + params.tau_refraction
             update(LIFStates(params.v_reset, idle_end))
-            task_fn(idle_end)
+            put_task(idle_end)
         else
             udpate(LIFStates(new_u, nothing))
-            task_fn(t + dt)
+            put_task(t + dt)
         end
     end
 end

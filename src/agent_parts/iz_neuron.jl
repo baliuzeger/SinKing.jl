@@ -14,7 +14,7 @@ struct IZParams{T <: AbstractFloat}
     tau_refraction::T
 end
 
-function evolve(t, dt, states::IZStates, params::IZParams, inject_fn, update, fire_fn, task_fn)
+function evolve(t, dt, states::IZStates, params::IZParams, inject_fn, update, fire_fn, put_task)
     if isnothing(states.idle_end) || states.idle_end <= t
         i_syn, delta_v = inject_fn()
         new_v = states.v + dt * (0.04 states.v^2 + 5 states.v + 140 - states.u + i_syn) + delta_v
@@ -26,11 +26,11 @@ function evolve(t, dt, states::IZStates, params::IZParams, inject_fn, update, fi
             fire_fn(t, dt)
             idle_end = t + params.tau_refraction
             update(IZStates(new_v, new_u, idle_end))
-            task_fn(idle_end)
+            put_task(idle_end)
             
         else
             update(IZStates(new_v, new_u, nothing))
-            task_fn(t + dt)
+            put_task(t + dt)
         end
     end
 end

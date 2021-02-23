@@ -1,13 +1,14 @@
 module LIFSimple
 
 struct LIFSimpleAgent
+    address::Address
     states::LIFStates
     params::LIFParams
     donors_simple::Vector{Donor}
     acceptors_t_delta_v::Vector{Acceptor{TimedDelta}}
 end
 
-function act(agent::LIFSimpleAgent, t, st, task_handler)
+function act(agent::LIFSimpleAgent, t, st, put_task)
 
     function inject_fn()
         agent.acceptors_t_delta_v.take(t)
@@ -23,16 +24,20 @@ function act(agent::LIFSimpleAgent, t, st, task_handler)
 
     function fire_fn()
         foreach(dnr -> dnr.put(TimedDelta(t, 1.0)), agent.donors_simple)
-    end
-
-    function task_fn(next_t)
-        put_task(next_t, (t, dt) -> act(agent, t, dt, task_handler))
+        for dnr in agent.donors_simple
+            dnr.put(TimedDelta(t, 1.0))
+            put_task(t + dt, dnr.address)
+        end
     end
     
-    evolve(t, dt, agent.states, agent.params, inject_fn, lif_update, fire_fn, task_fn)
+    evolve(t,
+           dt,
+           agent.states,
+           agent.params,
+           inject_fn,
+           lif_update,
+           fire_fn,
+           t -> put_task(t, agent.Address))
 end
-
-
-
 
 end # module end
