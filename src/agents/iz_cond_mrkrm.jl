@@ -6,7 +6,7 @@ struct IZCondMrkrmStates{T <: AbstractFloat} <: AgentStates{T}
     mrkrm::MarkramStates{T}
 end
 
-struct IZCondMrkrmParams{T <: AbstractFloat} <: AgentStates{T}
+struct IZCondMrkrmParams{T <: AbstractFloat}
     iz::IZParams
     cond::ConductanceParams
     mrkrm::Markramparams
@@ -32,9 +32,9 @@ function act(agent::IZCondMrkrmAgent, t, dt, task_handler)
     end
     
     function inject_fn()
-        agent.acceptors_t_delta_v.taker(t)
-        agent.acceptors_t_exct_delta_g.taker(t)
-        agent.acceptors_t_inhbt_delta_g.taker(t)
+        agent.acceptors_t_delta_v.take(t)
+        agent.acceptors_t_exct_delta_g.take(t)
+        agent.acceptors_t_inhbt_delta_g.take(t)
 
         delta_v = reduce((acc, x) -> acc + x.delta_v,
                          vcat(map(accptr -> take_due_signals(t, accptr),
