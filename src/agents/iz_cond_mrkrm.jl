@@ -15,17 +15,19 @@ end
 struct IZCondMrkrmAgent{T <: AbstractFloat} <: Agent{IZStates{T}}
     states::IZCondMrkrmStates{T}
     params::IZCondMrkrmParams{T}
-    donors_t_delta_v::Vector{DonorTimedDeltaV}
-    donors_t_delta_g::Vector{DonorTimedDeltaCond}
-    acceptors_t_delta_v::Vector{AcceptorTimedDeltaV}
-    acceptors_t_exct_delta_g::Vector{AcceptorTimedExctDeltaCond}
-    acceptors_t_inhbt_delta_g::Vector{AcceptorTimedInhbtDeltaCond}
+    # donors_t_delta_v::Vector{DonorTimedDeltaV}
+    # donors_t_delta_g::Vector{DonorTimedDeltaCond}
+    donors_simple::Vector{Donor}
+    donors_mrkrm::::Vector{Donor}
+    acceptors_t_delta_v::Vector{Acceptor{TimedDelta}}
+    acceptors_t_exct_delta_g::Vector{Acceptor{TimedDelta}}
+    acceptors_t_inhbt_delta_g::Vector{Acceptor{TimedDelta}}
 end
 
 # accept(acceptor) return [] of msgs
 function act(agent::IZCondMrkrmAgent, t, dt, task_handler)
 
-    function cond_updater(cond_states)
+    function cond_update(cond_states::ConductanceStates)
         agent.states.cond = cond_states
     end
     
@@ -50,24 +52,32 @@ function act(agent::IZCondMrkrmAgent, t, dt, task_handler)
                              0.)
         
         i_syn = gen_syn_current(
-            dt, delta_exct, delta_inhbt, agent.states.cond, agent.params.cond, agent.state.iz.v, cond_updater
+            dt, delta_exct, delta_inhbt, agent.states.cond, agent.params.cond, agent.state.iz.v, cond_update
         )
         return (i_syn, delta_v)
     end
 
-    function iz_updater(iz_states)
+    function iz_update(iz_states::IZStates)
         agent.states.iz = iz_states
     end
 
-    function fire_fn(t, dt) # fix here to match Donor!!!
-        fire(t, dt, agent.states.mrkrm, agent.params.mrkrm, agent.donors_t_delta_g)
+    function mrkrm_update(mrkrm_states::MarkramStates)
+        agent.states.mrkrm = mrkrm_states
+    end
+
+    function put_mrkrm_signal(signal::TimedDelta)
+        foreach(dnr -> dnr.put(signal), agent.donors_mrkrm)
+    end
+    
+    function fire_fn(t, dt)
+        fire(t, dt, agent.states.mrkrm, agent.params.mrkrm, mrkrm_update, put_mrkrm_signal)
     end
 
     function task_fn(next_t)
         put_task(next_t, (t, dt) -> act(agent, t, dt, task_handler))
     end
     
-    evolve(t, dt, agent.states.iz, agent.params.iz, inject_fn, iz_updater, fire_fn, task_fn)
+    evolve(t, dt, agent.states.iz, agent.params.iz, inject_fn, iz_update, fire_fn, task_fn)
     
 end
 

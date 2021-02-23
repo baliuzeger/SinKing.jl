@@ -15,34 +15,39 @@ function take_due_signals{T}(t, acceptor::Acceptor{T})
     return take
 end
 
-struct TimedExctDeltaCond
+struct TimedDelta
     t::AbstractFloat
-    delta_cond::AbstractFloat
+    delta::AbstractFloat
 end
 
-struct TimedInhbtDeltaCond
-    t::AbstractFloat
-    delta_cond::AbstractFloat
-end
+# struct TimedExctDeltaCond
+#     t::AbstractFloat
+#     delta_cond::AbstractFloat
+# end
 
-struct TimedDeltaCond
-    t::AbstractFloat
-    delta_cond::AbstractFloat
-end
+# struct TimedInhbtDeltaCond
+#     t::AbstractFloat
+#     delta_cond::AbstractFloat
+# end
 
-struct TimedDeltaV
-    t::AbstractFloat
-    delta_v::AbstractFloat
-end
+# struct TimedDeltaCond
+#     t::AbstractFloat
+#     delta_cond::AbstractFloat
+# end
+
+# struct TimedDeltaV
+#     t::AbstractFloat
+#     delta_v::AbstractFloat
+# end
 
 struct Donor
-    setter # fn for dependency injection of putter & taker
-    putter # send signal to acceptor side
+    set # fn for dependency injection of putter & taker
+    put # send signal to acceptor side
 end
 
 struct Acceptor{T}
-    setter
-    taker # take signals into stack.
+    set
+    take # take signals into stack.
     stack::Vector{T}
 end
 
