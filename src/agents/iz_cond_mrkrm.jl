@@ -71,6 +71,7 @@ function act(agent::IZCondMrkrmAgent, t, dt, task_handler)
     
     function fire_fn(t, dt)
         fire(t, dt, agent.states.mrkrm, agent.params.mrkrm, mrkrm_update, put_mrkrm_signal)
+        foreach(dnr -> dnr.put(TimedDelta(t, 1.0)), agent.donors_simple)
     end
 
     function task_fn(next_t)
