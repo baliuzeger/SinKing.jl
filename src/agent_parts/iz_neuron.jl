@@ -17,8 +17,8 @@ end
 function evolve(t, dt, states::IZStates, params::IZParams, inject_fn, updater, fire_fn, task_fn)
     if isnothing(states.idle_end) || states.idle_end <= t
         i_syn, delta_v = inject_fn()
-        new_v = states.iz_v + dt * (0.04 states.iz_v^2 + 5 states.iz_v + 140 - states.iz_u - i_syn) + delta_v
-        new_u = states.iz_u + dt * params.iz_a (params.iz_b * states.iz_v - states.iz_u)
+        new_v = states.v + dt * (0.04 states.v^2 + 5 states.v + 140 - states.u + i_syn) + delta_v
+        new_u = states.u + dt * params.iz_a (params.iz_b * states.v - states.u)
         
         if new_v >= 30
             new_v = params.iz_c
