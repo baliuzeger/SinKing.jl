@@ -17,8 +17,6 @@ end
 struct LIFNeuron
 end
 
-input signals in idle time should be neglected!
-
 next step: make synapses. how to deal with passive connections?
 
 the handler of signals should be produced by dependency-injection before each execution. before an execution, the network remember the connections without pre-defined handlers of signals. let vectors of donors and acceptors take setter functions that can perofrm dependency-injection on executions. a setter function set the sognal handlers of both connecting sides.

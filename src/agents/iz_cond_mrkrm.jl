@@ -10,6 +10,7 @@ struct IZCondMrkrmParams{T <: AbstractFloat}
     iz::IZParams
     cond::ConductanceParams
     mrkrm::Markramparams
+    delta_v::AbstractFloat
 end
 
 struct IZCondMrkrmAgent{T <: AbstractFloat} <: Agent{IZStates{T}}
@@ -35,21 +36,22 @@ function act(agent::IZCondMrkrmAgent, t, dt, put_task)
         agent.acceptors_t_delta_v.take(t)
         agent.acceptors_t_exct_delta_g.take(t)
         agent.acceptors_t_inhbt_delta_g.take(t)
+        delta_v_signals = vcat(map(accptr -> take_due_signals(t, accptr),
+                                   agent.acceptors_t_delta_v))
+        delta_exct_signals = vcat(map(accptr -> take_due_signals(t, accptr),
+                                      agent.acceptors_t_exct_delta_g))
+        delta_inhbt_signals = vcat(map(accptr -> take_due_signals(t, accptr),
+                                      agent.acceptors_t_inhbt_delta_g)) 
 
-        delta_v = reduce((acc, x) -> acc + x.delta_v,
-                         vcat(map(accptr -> take_due_signals(t, accptr),
-                                  agent.acceptors_t_delta_v)),
-                         0.)
-
-        delta_exct = reduce((acc, x) -> acc + x.delta_cond,
-                            vcat(map(accptr -> take_due_signals(t, accptr),
-                                     agent.acceptors_t_exct_delta_g)),
-                            0.)
-
-        delta_inhbt = reduce((acc, x) -> acc + x.delta_cond,
-                             vcat(map(accptr -> take_due_signals(t, accptr),
-                                      agent.acceptors_t_inhbt_delta_g)),
-                             0.)
+        if ! isnothing(agent.states.iz.idle_end)
+            delta_v_signals = filter(s -> s.t >= agent.states.iz.idle_end, delta_v_signals)
+            delta_exct_signals = filter(s -> s.t >= agent.states.iz.idle_end, delta_exct_signals)
+            delta_inhbt_signals = filter(s -> s.t >= agent.states.iz.idle_end, delta_inhbt_signals)
+        end
+        
+        delta_v = reduce((acc, x) -> acc + x.delta_v, delta_v_signals, 0.)
+        delta_exct = reduce((acc, x) -> acc + x.delta_cond, delta_exct_signals, 0.)
+        delta_inhbt = reduce((acc, x) -> acc + x.delta_cond, delta_inhbt_signals, 0.)
         
         i_syn = gen_syn_current(
             dt, delta_exct, delta_inhbt, agent.states.cond, agent.params.cond, agent.state.iz.v, cond_update
@@ -73,7 +75,7 @@ function act(agent::IZCondMrkrmAgent, t, dt, put_task)
         fire(t, dt, agent.states.mrkrm, agent.params.mrkrm, mrkrm_update, put_mrkrm_signal)
         foreach(dnr -> put_task(t + dt, dnr.address), agent.donors_mrkrm)
         for dnr in agent.donors_simple
-            dnr.put(TimedDelta(t, 1.0))
+            dnr.put(TimedDelta(t, agent.params.delta_v))
             put_task(t + dt, dnr.address)
         end
     end
