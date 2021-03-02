@@ -18,11 +18,14 @@ struct IZCondMrkrmAgent{T <: AbstractFloat} <: Agent{IZStates{T}}
     params::IZCondMrkrmParams{T}
     # donors_t_delta_v::Vector{DonorTimedDeltaV}
     # donors_t_delta_g::Vector{DonorTimedDeltaCond}
-    donors_simple::Vector{Donor}
-    donors_mrkrm::::Vector{Donor}
-    acceptors_t_delta_v::Vector{Acceptor{TimedDelta}}
-    acceptors_t_exct_delta_g::Vector{Acceptor{TimedDelta}}
-    acceptors_t_inhbt_delta_g::Vector{Acceptor{TimedDelta}}
+    acceptors_t_delta_v::Vector{Address}
+    acceptors_mrkrm::::Vector{Address}
+    donors_t_delta_v::Vector{Address}
+    stack_t_delta_v::Vector{TimedDeltaV}
+    donors_t_exct_delta_g::Vector{Address}
+    stack_t_exct_delta_g::Vector{TimedExctDeltaCond}
+    donors_t_inhbt_delta_g::Vector{Address}
+    stack_t_inhbt_delta_g::Vector{TimedInhbtDeltaCond}
 end
 
 # accept(acceptor) return [] of msgs

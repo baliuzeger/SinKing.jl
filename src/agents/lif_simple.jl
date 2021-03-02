@@ -9,8 +9,9 @@ struct LIFSimpleAgent
     address::Address
     states::LIFStates
     params::LIFSimpleParams
-    donors_simple::Vector{Donor}
-    acceptors_t_delta_v::Vector{Acceptor{TimedDelta}}
+    acceptors_t_delta_v::Vector{Address} # agents that accept from self.
+    donors_t_delta_v::Vector{Address} # agents that donate to self.
+    stack_t_delta_v::Vector{TimedDeltaV}
 end
 
 function act(agent::LIFSimpleAgent, t, dt, put_task)
@@ -46,5 +47,7 @@ function act(agent::LIFSimpleAgent, t, dt, put_task)
            fire_fn,
            t -> put_task(t, agent.Address))
 end
+
+function 
 
 end # module end
