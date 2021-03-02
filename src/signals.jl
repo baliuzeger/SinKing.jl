@@ -40,13 +40,13 @@ end
 #     delta_v::AbstractFloat
 # end
 
-struct Donor # don't need set when use address ?
+struct Donor
     set # fn for dependency injection of putter & taker.
     address
     put # send signal to acceptor side
 end
 
-struct Acceptor{T} # don't need set when use address ?
+struct Acceptor{T}
     set
     address
     take # take signals into stack.

@@ -13,7 +13,7 @@ struct LIFSimpleAgent
     acceptors_t_delta_v::Vector{Acceptor{TimedDelta}}
 end
 
-function act(agent::LIFSimpleAgent, t, st, put_task)
+function act(agent::LIFSimpleAgent, t, dt, put_task)
 
     function inject_fn()
         agent.acceptors_t_delta_v.take(t)
