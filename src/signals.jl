@@ -1,19 +1,19 @@
 module Signals
 
-# abstract type TimedSingal end
+abstract type TimedSigal end
 
-# function take_due_signals{T}(t, acceptor::Acceptor{T})
-#     keep, take = [], []
-#     for x in acceptor.signals
-#         if x.t <= t
-#             push!(take, x)
-#         else
-#             push!(keep, x)
-#         end
-#     end
-#     acceptor.stack = keep
-#     return take
-# end
+function take_due_signals{T}(t, signals::Vector{TimedSigal})
+    keep, take = [], []
+    for x in signals
+        if x.t <= t
+            push!(take, x)
+        else
+            push!(keep, x)
+        end
+    end
+    acceptor.stack = keep
+    return keeo, take
+end
 
 # struct TimedDelta
 #     t::AbstractFloat

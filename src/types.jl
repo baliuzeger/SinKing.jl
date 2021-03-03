@@ -1,4 +1,5 @@
 module Types
+export Address
 
 struct Address
     population::string

@@ -1,3 +1,5 @@
+using Sinking.Types
+
 module LIFSimple
 
 struct LIFSimpleParams
@@ -6,7 +8,7 @@ struct LIFSimpleParams
 end
 
 struct LIFSimpleAgent
-    address::Address
+    # address::Address
     states::LIFStates
     params::LIFSimpleParams
     acceptors_t_delta_v::Vector{Address} # agents that accept from self.
@@ -14,20 +16,22 @@ struct LIFSimpleAgent
     stack_t_delta_v::Vector{TimedDeltaV}
 end
 
-function act(agent::LIFSimpleAgent, t, dt, put_task)
+function act(address::Address, agent::LIFSimpleAgent, t, dt, put_task, update_agent)
 
+    new_states = agent.states
+    new_params = agent.params
+    new_stack_t_delta_v = agent.stack_t_delta_v
+    
     function inject_fn()
-        agent.acceptors_t_delta_v.take(t)
-        signals = vcat(map(accptr -> take_due_signals(t, accptr),
-                           agent.acceptors_t_delta_v))
+        new_stack_t_delta_v, signals = take_due_signals(agent.stack_t_delta_v)
         if ! isnothing(agent.states.lif.idle_end)
             signals = filter(s -> s.t >= agent.states.lif.idle_end, signals)
         end
-        return reduce((acc, x) -> acc + x.delta_v, signals, 0.)
+        return (0, reduce((acc, x) -> acc + x.delta_v, signals, 0.)) # (i_syn, delta_v)
     end
 
     function lif_update(states::LIFStates)
-        agent.states = states
+        new_states = states
     end
 
     function fire_fn()
@@ -46,6 +50,12 @@ function act(agent::LIFSimpleAgent, t, dt, put_task)
            lif_update,
            fire_fn,
            t -> put_task(t, agent.Address))
+
+    update_agent(address, LIFSimpleAgent(new_states,
+                                         new_params,
+                                         agent.acceptors_t_delta_v,
+                                         agent.donors_t_delta_v
+                                         new_stack_t_delta_v))
 end
 
 function 
