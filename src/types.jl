@@ -1,5 +1,5 @@
 module Types
-export Address
+export Address, Agent
 
 struct Address
     population::string

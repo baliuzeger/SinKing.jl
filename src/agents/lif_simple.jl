@@ -7,7 +7,7 @@ struct LIFSimpleParams
     delta_v::AbstractFloat
 end
 
-struct LIFSimpleAgent
+struct LIFSimpleAgent <: Agent
     # address::Address
     states::LIFStates
     params::LIFSimpleParams
@@ -16,11 +16,12 @@ struct LIFSimpleAgent
     stack_t_delta_v::Vector{TimedDeltaV}
 end
 
-function act(address::Address, agent::LIFSimpleAgent, t, dt, put_task, update_agent)
+function act(address::Address, agent::LIFSimpleAgent, t, dt, push_task, update_agent, push_signal)
 
     new_states = agent.states
-    new_params = agent.params
     new_stack_t_delta_v = agent.stack_t_delta_v
+    fired = false
+    next_t = t + dt
     
     function inject_fn()
         new_stack_t_delta_v, signals = take_due_signals(agent.stack_t_delta_v)
@@ -35,11 +36,11 @@ function act(address::Address, agent::LIFSimpleAgent, t, dt, put_task, update_ag
     end
 
     function fire_fn()
-        foreach(dnr -> dnr.put(TimedDelta(t, 1.0)), agent.donors_simple)
-        for dnr in agent.donors_simple
-            dnr.put(TimedDelta(t, agent.params.delta_v))
-            put_task(t + dt, dnr.address)
-        end
+        fired = true
+    end
+
+    function lif_push_task(t)
+        next_t = t
     end
     
     evolve(t,
@@ -49,15 +50,26 @@ function act(address::Address, agent::LIFSimpleAgent, t, dt, put_task, update_ag
            inject_fn,
            lif_update,
            fire_fn,
-           t -> put_task(t, agent.Address))
+           lif_push_task)
 
     update_agent(address, LIFSimpleAgent(new_states,
-                                         new_params,
+                                         agent.params,
                                          agent.acceptors_t_delta_v,
                                          agent.donors_t_delta_v
                                          new_stack_t_delta_v))
+
+    push_task(address, next_t)
+    if fired
+        signal = TimedDeltaV(next_t, agent.params.delta_v)
+        for adrs in agent.acceptors_t_delta_v
+            push_task(adrs, next_t)
+            push_signal(adrs, signal)
+        end
+    end
 end
 
-function 
+function accept(agent::LIFSimpleAgent, signal::TimedDeltaV)
+    push!(agent.stack_t_delta_v, signal)
+end
 
 end # module end
