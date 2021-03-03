@@ -25,7 +25,7 @@ function act(address::Address, agent::LIFSimpleAgent, t, dt, push_task, update_a
     
     function inject_fn()
         new_stack_t_delta_v, signals = take_due_signals(agent.stack_t_delta_v)
-        if ! isnothing(agent.states.lif.idle_end)
+        if ! isnothing(agent.states.lif.idle_end) # at end of refraction
             signals = filter(s -> s.t >= agent.states.lif.idle_end, signals)
         end
         return (0, reduce((acc, x) -> acc + x.delta_v, signals, 0.)) # (i_syn, delta_v)
