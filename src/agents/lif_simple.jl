@@ -1,4 +1,6 @@
 using Sinking.Types
+using Sinking.AgentParts
+using Sinking.AgentParts: evolve
 
 module LIFSimple
 
@@ -16,6 +18,8 @@ struct LIFSimpleAgent <: Agent
     acceptors_t_delta_v::Vector{Address} # agents that accept from self.
     donors_t_delta_v::Vector{Address} # agents that donate to self.
     stack_t_delta_v::Vector{TimedDeltaV}
+
+    LIFSimpleAgent(states, params) = new(states, params, [], [], [])
 end
 
 function act(address::Address, agent::LIFSimpleAgent, t, dt, push_task, update_agent, push_signal)
