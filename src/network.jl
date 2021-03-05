@@ -1,6 +1,7 @@
 using Sinking.Types
 
 module Network
+export Address, Point3D, Seat, Population, run, push_seat
 
 # struct Network
 #     populations::Dict{string, Vector{Agent}}
@@ -27,7 +28,13 @@ struct Population{T <: Unsigned, V<: AbstractFloat, U <: Agent}
     max::T
     agents::Dict{T, Seat{V, U}}
 
-    Population(agents::Dict{U, Seat{V, U}}) = new(0, agents)
+    Population() = new(0, Dict([]))
+end
+
+function push_seat(ppln::Population{T, V, U}, seat::Seat{V, U})
+    where {T <: Unsigned, V<: AbstractFloat, U <: Agent}
+    ppln.max += 1
+    ppln.agents[ppln.max] = seat
 end
 
 function get_agent(network::Dict{String, Population{U, T, V}}, address::Address)

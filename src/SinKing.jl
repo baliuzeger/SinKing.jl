@@ -1,8 +1,8 @@
 module SinKing
 
 include("./types.jl")
-
-include("./signals")
+include("./signals.jl")
+include("./network.jl")
 
 module AgentParts
 include("./agent_parts/iz_neuron.jl")
