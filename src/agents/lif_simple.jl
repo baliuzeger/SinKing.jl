@@ -2,6 +2,8 @@ using Sinking.Types
 
 module LIFSimple
 
+export LIFSimpleAgent, act, accept
+
 struct LIFSimpleParams
     lif::LIFParams
     delta_v::AbstractFloat

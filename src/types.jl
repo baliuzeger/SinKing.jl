@@ -1,10 +1,6 @@
 module Types
 export Address, Agent
 
-struct Address
-    population::string
-    num::Unsigned
-end
 
 abstract type AgentStates{T <: AbstractFloat} end
 

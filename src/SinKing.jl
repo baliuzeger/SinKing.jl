@@ -12,6 +12,7 @@ end
 
 module Agents
 include(".agents/iz_cond_mrkrm.jl")
+include(".agents/lif_simple.jl")
 end
 
 struct LIFNeuron
