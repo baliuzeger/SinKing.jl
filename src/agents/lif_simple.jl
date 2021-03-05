@@ -74,4 +74,8 @@ function accept(agent::LIFSimpleAgent, signal::TimedDeltaV)
     push!(agent.stack_t_delta_v, signal)
 end
 
+function update(agent::LIFSimpleAgent, states::LIFStates)
+    agent.states = states
+end
+
 end # module end

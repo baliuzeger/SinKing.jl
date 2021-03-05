@@ -30,6 +30,11 @@ struct Population{T <: Unsigned, V<: AbstractFloat, U <: Agent}
     Population(agents::Dict{U, Seat{V, U}}) = new(0, agents)
 end
 
+function get_agent(network::Dict{String, Population{U, T, V}}, address::Address)
+    where {T <: AbstractFloat, U <: Unsigned, V <: Agent}
+    return network[address.population][address.num]
+end
+
 function run(start_t::T,
              end_t::T,
              dt::T,
@@ -71,8 +76,13 @@ function run(start_t::T,
                 next_q[adrs] = work_t
             end
         end
+
         current_q = next_q
-        for (adrs, update) in updates
+        for (adrs, states) in state_updates
+            update(get_agent(network, adrs), states)
+        end
+        for (adrs, signals) in accepted_signals
+            foreach(s -> accept(get_agent(network, adrs), s), signals)
         end
         t += dt
     end
