@@ -27,7 +27,7 @@ struct Population{T <: Unsigned, V <: AbstractFloat}
     max::T
     agents::Dict{T, Seat{V}}
 
-    Population() = new{T, V}(0, Dict([]))
+    Population{T, V}() where{T <: Unsigned, V <: AbstractFloat} = new(0, Dict([]))
 end
 
 function push_seat(ppln::Population{T, V}, seat::Seat{V}) where {T <: Unsigned, V<: AbstractFloat}
