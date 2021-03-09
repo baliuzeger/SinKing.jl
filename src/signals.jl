@@ -1,10 +1,14 @@
 module Signals
+
 using ..Network
-export take_due_signals, name_t_delta_v, TimedDeltaV, TimedExctDeltaCond, TimedInhbtDeltaCond, TimedMarkram
+using ..Types
+export take_due_signals, name_t_delta_v, connect,
+    TimedDeltaV, TimedExctDeltaCond, TimedInhbtDeltaCond, TimedMarkram,
+    add_acceptor, add_donor, can_add_acceptor, can_add_donor
 
-abstract type TimedSigal end
+abstract type TimedSignal <: Signal end
 
-function take_due_signals(t, signals::Vector{TimedSigal})
+function take_due_signals(t, signals::Vector{TimedSignal})
     keep, take = [], []
     for x in signals
         if x.t <= t
@@ -17,32 +21,37 @@ function take_due_signals(t, signals::Vector{TimedSigal})
     return keeo, take
 end
 
-struct TimedMarkram
+struct TimedMarkram <: Signal
     t::AbstractFloat
     delta::AbstractFloat
 end
 
-struct TimedExctDeltaCond
+struct TimedExctDeltaCond <: Signal
     t::AbstractFloat
     delta_cond::AbstractFloat
 end
 
-struct TimedInhbtDeltaCond
+struct TimedInhbtDeltaCond <: Signal
     t::AbstractFloat
     delta_cond::AbstractFloat
 end
 
-struct TimedDeltaCond
+struct TimedDeltaCond <: Signal
     t::AbstractFloat
     delta_cond::AbstractFloat
 end
 
 const name_t_delta_v = "TimedDeltaV"
 
-struct TimedDeltaV
+struct TimedDeltaV <: Signal
     t::AbstractFloat
     delta_v::AbstractFloat
 end
+
+function can_add_acceptor end
+function can_add_donor end
+function add_acceptor end
+function add_donor end
 
 function connect(network::Dict{String, Population{U, T}},
                  signal_name::String,

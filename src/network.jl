@@ -1,6 +1,6 @@
 module Network
 using ..Types
-export Address, Point3D, Seat, Population, run, push_seat, get_agent
+export Address, Point3D, Seat, Population, simulate, push_seat, get_agent
 
 # struct Network
 #     populations::Dict{string, Vector{Agent}}
@@ -23,7 +23,7 @@ struct Seat{T <: AbstractFloat}
     agent::Agent
 end
 
-struct Population{T <: Unsigned, V <: AbstractFloat}
+mutable struct Population{T <: Unsigned, V <: AbstractFloat}
     max::T
     agents::Dict{T, Seat{V}}
 
@@ -40,11 +40,11 @@ function get_agent(network::Dict{String, Population{T, V}},
     return network[address.population].agents[address.num].agent
 end
 
-function run(start_t::T,
-             end_t::T,
-             dt::T,
-             network::Dict{String, Population{U, T}},
-             current_q::Dict{Address, T}) where {T <: AbstractFloat, U <: Unsigned}
+function simulate(start_t::T,
+                  end_t::T,
+                  dt::T,
+                  network::Dict{String, Population{U, T}},
+                  current_q::Dict{Address{U}, T}) where {T <: AbstractFloat, U <: Unsigned}
     
     t = start_t
     while t < end_t

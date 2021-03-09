@@ -1,8 +1,8 @@
 module Types
-export Agent
+export Agent, Signal
 
-
-abstract type AgentStates{T <: AbstractFloat} end
+abstract type Signal end
+#abstract type AgentStates{T <: AbstractFloat} end
 
 #abstract type Agent{S <: AgentStates} end
 abstract type Agent end

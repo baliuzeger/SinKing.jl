@@ -3,8 +3,9 @@ using ...Types
 using ...AgentParts.LIFNeuron
 using ...Network
 using ...Signals
+import ...Signals: add_acceptor, add_donor, can_add_acceptor, can_add_donor
 
-export LIFSimpleAgent, act, accept
+export LIFSimpleAgent, act, accept, LIFSimpleParams
 
 struct LIFSimpleParams
     lif::LIFParams
