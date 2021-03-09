@@ -1,6 +1,8 @@
 using Sinking.Types
 using Sinking.AgentParts
 using Sinking.AgentParts: evolve
+using Sinking.Network
+using Sinking.Signals
 
 module LIFSimple
 
@@ -82,13 +84,38 @@ function update(agent::LIFSimpleAgent, states::LIFStates)
     agent.states = states
 end
 
-function add_donor()
+function can_add_donor(agent::LIFSimpleAgent, signal_name::String)
+    if signal_name == name_t_delta_v
+        return true
+    else
+        return false
+    end
 end
 
-function connect(network::Dict{String, Population{U, T, Agent}}
-                 donor_address::Address,
-                 acceptor_address::Address) where {T <: AbstractFloat, U <: Unsigned}
+function can_add_acceptor(agent::LIFSimpleAgent, signal_name::String)
+    if signal_name == name_t_delta_v
+        return true
+    else
+        return false
+    end
+end
+
+function add_donor(agent::LIFSimpleAgent, address::Address, signal_name)
+    if signal_name == name_t_delta_v
+        push!(agent.donors_t_delta_v, address)
+    else
+        error("LIFSimpleAgent cannot add $signal_name donors!")
+    end
     
 end
+
+function add_acceptor(agent::LIFSimpleAgent, address::Address, signal_name)
+    if signal_name == name_t_delta_v
+        push!(agent.acceptors_t_delta_v, address)
+    else
+        error("LIFSimpleAgent cannot add $signal_name acceptors!")
+    end
+end
+
 
 end # module end

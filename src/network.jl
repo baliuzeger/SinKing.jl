@@ -1,7 +1,7 @@
 using Sinking.Types
 
 module Network
-export Address, Point3D, Seat, Population, run, push_seat
+export Address, Point3D, Seat, Population, run, push_seat, get_agent
 
 # struct Network
 #     populations::Dict{string, Vector{Agent}}

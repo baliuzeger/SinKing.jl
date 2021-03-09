@@ -1,4 +1,7 @@
+using Sinking.Network
+
 module Signals
+export take_due_signals, name_t_delta_v
 
 abstract type TimedSigal end
 
@@ -35,9 +38,23 @@ struct TimedDeltaCond
     delta_cond::AbstractFloat
 end
 
+const name_t_delta_v = "TimedDeltaV"
+
 struct TimedDeltaV
     t::AbstractFloat
     delta_v::AbstractFloat
+end
+
+function connect(network::Dict{String, Population{U, T}},
+                 signal_name::string,
+                 donor_address::Address,
+                 acceptor_address::Address) where {T <: AbstractFloat, U <: Unsigned}
+    dnr = get_agent(network, donor_address)
+    acptr = get_agent(network, acceptor_address)
+    if can_add_acceptor(dnr, signal_name) && can_add_donor(acptr, signal_name)
+        add_acceptor(dnr, acceptor_address, signal_name)
+        add_donor(acptr, donor_address, signal_name)
+    end
 end
 
 ## let agent be pure data without functions / methods., remove Donor / Acceptor.
