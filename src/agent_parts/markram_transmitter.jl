@@ -1,4 +1,5 @@
 module MarkramTransmitter
+export MarkramStates, Markramparams, fire
 
 struct MarkramStates{T <: AbstractFloat}
     r::T
@@ -11,9 +12,11 @@ struct Markramparams{T <: AbstractFloat}
     u::T
 end
 
-struct fire(t, dt, states, params, updater, put_signal)
+function fire(t, dt, states, params, updater, put_signal)
     rw = states.r * states.w
     updater(dt * (1 - states.r) / params.d - rw_exct,
             dt * (params.u - states.w) / params.f + params.u * (1 - states.w))
     put_signal(TimedDeltaCond(t, rw))
 end
+
+end # Module end

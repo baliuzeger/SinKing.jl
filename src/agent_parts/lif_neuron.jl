@@ -1,5 +1,5 @@
 module LIFNeuron
-export LIFStates, LIFParams
+export LIFStates, LIFParams, evolve
 
 struct LIFStates{T <: AbstractFloat}
     v::T

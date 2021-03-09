@@ -1,5 +1,5 @@
 module Types
-export Address, Agent
+export Agent
 
 
 abstract type AgentStates{T <: AbstractFloat} end

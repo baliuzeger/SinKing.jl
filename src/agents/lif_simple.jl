@@ -1,10 +1,8 @@
-using Sinking.Types
-using Sinking.AgentParts
-using Sinking.AgentParts: evolve
-using Sinking.Network
-using Sinking.Signals
-
 module LIFSimple
+using ...Types
+using ...AgentParts.LIFNeuron
+using ...Network
+using ...Signals
 
 export LIFSimpleAgent, act, accept
 
@@ -63,7 +61,7 @@ function act(address::Address, agent::LIFSimpleAgent, t, dt, push_task, update_a
     update_agent(address, LIFSimpleAgent(new_states,
                                          agent.params,
                                          agent.acceptors_t_delta_v,
-                                         agent.donors_t_delta_v
+                                         agent.donors_t_delta_v,
                                          new_stack_t_delta_v))
 
     push_task(address, next_t)

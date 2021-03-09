@@ -1,4 +1,5 @@
 module ConductanceInjection
+export ConductanceStates, ConductanceParams, gen_syn_current
 
 struct ConductanceStates{T <: AbstractFloat}
     g_ampa::T
@@ -18,7 +19,7 @@ function gen_syn_current(dt,
                          delta_exct,
                          delta_inhbt,
                          states::ConductanceStates,
-                         states::ConductanceParams,
+                         params::ConductanceParams,
                          state_v::AbstractFloat,
                          updater)
 
@@ -32,3 +33,5 @@ function gen_syn_current(dt,
               stts.g_gaba_a * (state_v + 70) + stts.g_gaba_b(state_v + 90))
 
 end
+
+end # Module end

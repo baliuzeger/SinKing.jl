@@ -1,11 +1,10 @@
-using Sinking.Network
-
 module Signals
-export take_due_signals, name_t_delta_v
+using ..Network
+export take_due_signals, name_t_delta_v, TimedDeltaV, TimedExctDeltaCond, TimedInhbtDeltaCond, TimedMarkram
 
 abstract type TimedSigal end
 
-function take_due_signals{T}(t, signals::Vector{TimedSigal})
+function take_due_signals(t, signals::Vector{TimedSigal})
     keep, take = [], []
     for x in signals
         if x.t <= t
@@ -18,10 +17,10 @@ function take_due_signals{T}(t, signals::Vector{TimedSigal})
     return keeo, take
 end
 
-# struct TimedDelta
-#     t::AbstractFloat
-#     delta::AbstractFloat
-# end
+struct TimedMarkram
+    t::AbstractFloat
+    delta::AbstractFloat
+end
 
 struct TimedExctDeltaCond
     t::AbstractFloat
@@ -46,7 +45,7 @@ struct TimedDeltaV
 end
 
 function connect(network::Dict{String, Population{U, T}},
-                 signal_name::string,
+                 signal_name::String,
                  donor_address::Address,
                  acceptor_address::Address) where {T <: AbstractFloat, U <: Unsigned}
     dnr = get_agent(network, donor_address)

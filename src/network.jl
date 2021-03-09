@@ -1,6 +1,5 @@
-using Sinking.Types
-
 module Network
+using ..Types
 export Address, Point3D, Seat, Population, run, push_seat, get_agent
 
 # struct Network
@@ -20,7 +19,7 @@ struct Point3D{T <: AbstractFloat}
 end
 
 struct Seat{T <: AbstractFloat}
-    position::Position{T}
+    position::Point3D{T}
     agent::Agent
 end
 
@@ -28,7 +27,7 @@ struct Population{T <: Unsigned, V <: AbstractFloat}
     max::T
     agents::Dict{T, Seat{V}}
 
-    Population() = new(0, Dict([]))
+    Population() = new{T, V}(0, Dict([]))
 end
 
 function push_seat(ppln::Population{T, V}, seat::Seat{V}) where {T <: Unsigned, V<: AbstractFloat}
@@ -36,8 +35,8 @@ function push_seat(ppln::Population{T, V}, seat::Seat{V}) where {T <: Unsigned, 
     ppln.agents[ppln.max] = seat
 end
 
-function get_agent(network::Dict{String, Population{U, T}}, address::Address)
-    where {T <: AbstractFloat, U <: Unsigned}
+function get_agent(network::Dict{String, Population{T, V}},
+                   address::Address) where{T <: Unsigned, V <: AbstractFloat}
     return network[address.population].agents[address.num].agent
 end
 

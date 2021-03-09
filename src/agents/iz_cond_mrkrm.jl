@@ -1,6 +1,12 @@
 module IZCondMarkram
+using ...AgentParts.IZNeuron
+using ...AgentParts.ConductanceInjection
+using ...AgentParts.MarkramTransmitter
+using ...Types
+using ...Network
+using ...Signals
 
-struct IZCondMrkrmStates{T <: AbstractFloat} <: AgentStates{T}
+struct IZCondMrkrmStates{T <: AbstractFloat} # <: AgentStates{T}
     iz::IZStates{T}
     cond::ConductanceStates{T}
     mrkrm::MarkramStates{T}
@@ -13,13 +19,13 @@ struct IZCondMrkrmParams{T <: AbstractFloat}
     delta_v::AbstractFloat
 end
 
-struct IZCondMrkrmAgent{T <: AbstractFloat} <: Agent{IZStates{T}}
+struct IZCondMrkrmAgent{T <: AbstractFloat} <: Agent
     states::IZCondMrkrmStates{T}
     params::IZCondMrkrmParams{T}
     # donors_t_delta_v::Vector{DonorTimedDeltaV}
     # donors_t_delta_g::Vector{DonorTimedDeltaCond}
     acceptors_t_delta_v::Vector{Address}
-    acceptors_mrkrm::::Vector{Address}
+    acceptors_mrkrm::Vector{Address}
     donors_t_delta_v::Vector{Address}
     stack_t_delta_v::Vector{TimedDeltaV}
     donors_t_exct_delta_g::Vector{Address}
@@ -70,8 +76,8 @@ function act(agent::IZCondMrkrmAgent, t, dt, put_task)
         agent.states.mrkrm = mrkrm_states
     end
 
-    function put_mrkrm_signal(signal::TimedDelta)
-        foreach(dnr -> dnr.put(signal), agent.donors_mrkrm)
+    function put_mrkrm_signal(signal::TimedMarkram)
+        foreach(dnr -> dnr.put(signal), agent.acceptors_mrkrm)
     end
     
     function fire_fn(t, dt)
