@@ -54,6 +54,10 @@ function connect(network::Dict{String, Population{U, T}},
     if can_add_acceptor(dnr, signal_name) && can_add_donor(acptr, signal_name)
         add_acceptor(dnr, acceptor_address, signal_name)
         add_donor(acptr, donor_address, signal_name)
+    else
+        error(
+            "connect failed. Donor: $donor_address; acceptor: $acceptor_address; signal_name: $signal_name"
+        )
     end
 end
 
@@ -73,3 +77,11 @@ end
 # end
 
 end # Module end
+
+
+
+
+
+
+
+
