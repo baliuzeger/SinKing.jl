@@ -8,7 +8,7 @@ export take_due_signals, name_t_delta_v, connect,
 
 abstract type TimedSignal <: Signal end
 
-function take_due_signals(t, signals::Vector{TimedSignal})
+function take_due_signals(t::T, signals::Vector{U}) where {T <: AbstractFloat, U <: TimedSignal}
     keep, take = [], []
     for x in signals
         if x.t <= t
@@ -17,33 +17,32 @@ function take_due_signals(t, signals::Vector{TimedSignal})
             push!(keep, x)
         end
     end
-    acceptor.stack = keep
-    return keeo, take
+    return keep, take
 end
 
-struct TimedMarkram <: Signal
+struct TimedMarkram <: TimedSignal
     t::AbstractFloat
     delta::AbstractFloat
 end
 
-struct TimedExctDeltaCond <: Signal
+struct TimedExctDeltaCond <: TimedSignal
     t::AbstractFloat
     delta_cond::AbstractFloat
 end
 
-struct TimedInhbtDeltaCond <: Signal
+struct TimedInhbtDeltaCond <: TimedSignal
     t::AbstractFloat
     delta_cond::AbstractFloat
 end
 
-struct TimedDeltaCond <: Signal
+struct TimedDeltaCond <: TimedSignal
     t::AbstractFloat
     delta_cond::AbstractFloat
 end
 
 const name_t_delta_v = "TimedDeltaV"
 
-struct TimedDeltaV <: Signal
+struct TimedDeltaV <: TimedSignal
     t::AbstractFloat
     delta_v::AbstractFloat
 end

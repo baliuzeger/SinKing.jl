@@ -40,6 +40,8 @@ function get_agent(network::Dict{String, Population{T, V}},
     return network[address.population].agents[address.num].agent
 end
 
+function act end
+
 function simulate(start_t::T,
                   end_t::T,
                   dt::T,
@@ -71,7 +73,7 @@ function simulate(start_t::T,
         for (adrs, work_t) in current_q
             if work_t <= t
                 act(adrs,
-                    network[adrs.population][adrs.num],
+                    get_agent(network ,adrs),
                     t,
                     dt,
                     push_task,

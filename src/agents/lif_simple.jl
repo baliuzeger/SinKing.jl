@@ -2,6 +2,7 @@ module LIFSimple
 using ...Types
 using ...AgentParts.LIFNeuron
 using ...Network
+import ...Network: act
 using ...Signals
 import ...Signals: add_acceptor, add_donor, can_add_acceptor, can_add_donor
 
@@ -23,7 +24,13 @@ struct LIFSimpleAgent <: Agent
     LIFSimpleAgent(states, params) = new(states, params, [], [], [])
 end
 
-function act(address::Address, agent::LIFSimpleAgent, t, dt, push_task, update_agent, push_signal)
+function act(address::Address,
+             agent::LIFSimpleAgent,
+             t::T,
+             dt::T,
+             push_task,
+             update_agent,
+             push_signal) where {T <: AbstractFloat}
 
     new_states = agent.states
     new_stack_t_delta_v = agent.stack_t_delta_v
@@ -31,11 +38,13 @@ function act(address::Address, agent::LIFSimpleAgent, t, dt, push_task, update_a
     next_t = t + dt
     
     function inject_fn()
-        new_stack_t_delta_v, signals = take_due_signals(agent.stack_t_delta_v)
-        if ! isnothing(agent.states.lif.idle_end) # at end of refraction
-            signals = filter(s -> s.t >= agent.states.lif.idle_end, signals)
+        new_stack_t_delta_v, signals = take_due_signals(t, agent.stack_t_delta_v)
+        if ! isnothing(agent.states.refraction_end) # at end of refraction
+            signals = filter(s -> s.t >= agent.states.refraction_end, signals)
         end
-        return (0, reduce((acc, x) -> acc + x.delta_v, signals, 0.)) # (i_syn, delta_v)
+        return (0, reduce((acc, x) -> acc + x.delta_v,
+                          signals;
+                          init=0.0)) # (i_syn, delta_v)
     end
 
     function lif_update(states::LIFStates)

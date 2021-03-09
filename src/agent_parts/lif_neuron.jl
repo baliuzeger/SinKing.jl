@@ -14,7 +14,15 @@ struct LIFParams{T <: AbstractFloat}
     lazy_threshold::T
 end
 
-function evolve(t, dt, states::LIFStates, params::LIFParams, inject_fn, update, fire_fn, push_task)
+function evolve(t::T,
+                dt::T,
+                states::LIFStates,
+                params::LIFParams,
+                inject_fn,
+                update,
+                fire_fn,
+                push_task) where {T <: AbstractFloat}
+    
     if isnothing(states.refraction_end) || states.refraction_end <= t
         i_syn, delta_v = inject_fn()
         new_v = dt * (i_syn + params.v_steady - states.v) / params.tau_leak + delta_v
@@ -24,8 +32,8 @@ function evolve(t, dt, states::LIFStates, params::LIFParams, inject_fn, update, 
             update(LIFStates(params.v_reset, refraction_end))
             # push_task(refraction_end) # lazy!!!
         else
-            udpate(LIFStates(new_v, nothing))
-            if abs(new_v - v_steady) > params.lazy_threshold
+            update(LIFStates(new_v, nothing))
+            if abs(new_v - params.v_steady) > params.lazy_threshold
                 push_task(t + dt)
             end
         end
