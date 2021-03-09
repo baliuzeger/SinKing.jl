@@ -19,33 +19,32 @@ struct Point3D{T <: AbstractFloat}
     x3::T
 end
 
-struct Seat{T <: AbstractFloat, U <: Agent}
+struct Seat{T <: AbstractFloat}
     position::Position{T}
     agent::Agent
 end
 
-struct Population{T <: Unsigned, V<: AbstractFloat, U <: Agent}
+struct Population{T <: Unsigned, V <: AbstractFloat}
     max::T
-    agents::Dict{T, Seat{V, U}}
+    agents::Dict{T, Seat{V}}
 
     Population() = new(0, Dict([]))
 end
 
-function push_seat(ppln::Population{T, V, U}, seat::Seat{V, U})
-    where {T <: Unsigned, V<: AbstractFloat, U <: Agent}
+function push_seat(ppln::Population{T, V}, seat::Seat{V}) where {T <: Unsigned, V<: AbstractFloat}
     ppln.max += 1
     ppln.agents[ppln.max] = seat
 end
 
-function get_agent(network::Dict{String, Population{U, T, V}}, address::Address)
-    where {T <: AbstractFloat, U <: Unsigned, V <: Agent}
-    return network[address.population][address.num]
+function get_agent(network::Dict{String, Population{U, T}}, address::Address)
+    where {T <: AbstractFloat, U <: Unsigned}
+    return network[address.population].agents[address.num].agent
 end
 
 function run(start_t::T,
              end_t::T,
              dt::T,
-             network::Dict{String, Population{U, T, Agent}},
+             network::Dict{String, Population{U, T}},
              current_q::Dict{Address, T}) where {T <: AbstractFloat, U <: Unsigned}
     
     t = start_t

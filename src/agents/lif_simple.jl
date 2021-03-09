@@ -82,4 +82,13 @@ function update(agent::LIFSimpleAgent, states::LIFStates)
     agent.states = states
 end
 
+function add_donor()
+end
+
+function connect(network::Dict{String, Population{U, T, Agent}}
+                 donor_address::Address,
+                 acceptor_address::Address) where {T <: AbstractFloat, U <: Unsigned}
+    
+end
+
 end # module end
