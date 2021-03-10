@@ -47,14 +47,29 @@ function simulate(start_t::T,
                   end_t::T,
                   dt::T,
                   network::Dict{String, Population{U, T}},
-                  current_q::Dict{Address{U}, T}) where {T <: AbstractFloat, U <: Unsigned}
+                  current_q::Dict{Address{U}, T},
+                  recording_agents::Vector{Address{U}}) where {T <: AbstractFloat, U <: Unsigned}
+
+    total_steps = (end_t - start_t) ÷ dt + 1
+    col_names = reduce(recording_agents; init = []) do acc, adrs
+        for k, v in state_dict(get_agent(network, adrs))
+            push!(acc, "$(adrs.population)_$(adrs.num)_$(k)")
+        end
+    end
+    df = DataFrame()
+    for name in col_names
+        df[!, name] = repeat([0.0], total_steps)
+    end
     
     t = start_t
+    index = 1
     while t < end_t
         state_updates::Dict{Address, Any} = Dict([])
         accepted_signals::Dict{Address, Vector{Signal}} = Dict([])
         next_q = Dict([])
 
+        # store record here
+        
         function push_task(address, next_t)
             next_q[address] = next_t
         end
@@ -93,6 +108,7 @@ function simulate(start_t::T,
             foreach(s -> accept(get_agent(network, adrs), s), signals)
         end
         t += dt
+        index += 1
     end
     
 end

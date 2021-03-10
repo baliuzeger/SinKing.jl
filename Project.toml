@@ -2,3 +2,6 @@ name = "SinKing"
 uuid = "4587060e-00d8-490c-bc5b-2332c5b29177"
 authors = ["Bali Sun <baliuzeger@gmail.com>"]
 version = "0.1.0"
+
+[deps]
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
