@@ -25,7 +25,7 @@ function evolve(t::T,
     
     if isnothing(states.refraction_end) || states.refraction_end <= t
         i_syn, delta_v = inject_fn()
-        new_v = dt * (i_syn + params.v_steady - states.v) / params.tau_leak + delta_v
+        new_v = states.v +  dt * (i_syn + (states.v - params.v_steady) / params.tau_leak) + delta_v
         if new_v >= 30.0
             fire_fn(t, dt)
             refraction_end = t + params.tau_refraction
