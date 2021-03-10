@@ -2,26 +2,30 @@ module LIFSimple
 using ...Types
 using ...AgentParts.LIFNeuron
 using ...Network
-import ...Network: act
+import ...Network: act, update
 using ...Signals
 import ...Signals: add_acceptor, add_donor, can_add_acceptor, can_add_donor
 
-export LIFSimpleAgent, act, accept, LIFSimpleParams
+export LIFSimpleAgent, accept, LIFSimpleParams
 
 struct LIFSimpleParams
     lif::LIFParams
     delta_v::AbstractFloat
 end
 
-struct LIFSimpleAgent <: Agent
+mutable struct LIFSimpleAgent <: Agent
     # address::Address
     states::LIFStates
     params::LIFSimpleParams
     acceptors_t_delta_v::Vector{Address} # agents that accept from self.
     donors_t_delta_v::Vector{Address} # agents that donate to self.
     stack_t_delta_v::Vector{TimedDeltaV}
+end
 
-    LIFSimpleAgent(states, params) = new(states, params, [], [], [])
+LIFSimpleAgent(states::LIFStates, params::LIFSimpleParams) = LIFSimpleAgent(states, params, [], [], [])
+
+function update(agent::LIFSimpleAgent, states::LIFStates)
+    agent.states = states
 end
 
 function act(address::Address,
@@ -68,11 +72,12 @@ function act(address::Address,
            fire_fn,
            lif_push_task)
 
-    update_agent(address, LIFSimpleAgent(new_states,
-                                         agent.params,
-                                         agent.acceptors_t_delta_v,
-                                         agent.donors_t_delta_v,
-                                         new_stack_t_delta_v))
+    update_agent(address, new_states)
+    # update_agent(address, LIFSimpleAgent(new_states,
+    #                                      agent.params,
+    #                                      agent.acceptors_t_delta_v,
+    #                                      agent.donors_t_delta_v,
+    #                                      new_stack_t_delta_v))
 
     push_task(address, next_t)
     if fired
@@ -86,10 +91,6 @@ end
 
 function accept(agent::LIFSimpleAgent, signal::TimedDeltaV)
     push!(agent.stack_t_delta_v, signal)
-end
-
-function update(agent::LIFSimpleAgent, states::LIFStates)
-    agent.states = states
 end
 
 function can_add_donor(agent::LIFSimpleAgent, signal_name::String)

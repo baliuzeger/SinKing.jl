@@ -41,6 +41,7 @@ function get_agent(network::Dict{String, Population{T, V}},
 end
 
 function act end
+function update end
 
 function simulate(start_t::T,
                   end_t::T,
@@ -50,7 +51,7 @@ function simulate(start_t::T,
     
     t = start_t
     while t < end_t
-        state_updates::Dict{Address, T} = Dict([])
+        state_updates::Dict{Address, Any} = Dict([])
         accepted_signals::Dict{Address, Vector{Signal}} = Dict([])
         next_q = Dict([])
 
