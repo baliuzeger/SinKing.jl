@@ -42,6 +42,7 @@ end
 
 function act end
 function update end
+function state_dict end
 
 function simulate(start_t::T,
                   end_t::T,
@@ -51,14 +52,18 @@ function simulate(start_t::T,
                   recording_agents::Vector{Address{U}}) where {T <: AbstractFloat, U <: Unsigned}
 
     total_steps = (end_t - start_t) ÷ dt + 1
+    # function col_name(adrs::Address, state_name)
+    #     "$(adrs.population)_$(adrs.num)_$(k)"
+    # end
+    col_name = (adrs::Address, state_name::String) -> "$(adrs.population)_$(adrs.num)_$(k)"
     col_names = reduce(recording_agents; init = []) do acc, adrs
         for k, v in state_dict(get_agent(network, adrs))
-            push!(acc, "$(adrs.population)_$(adrs.num)_$(k)")
+            push!(acc, col_name(adrs, k))
         end
     end
     df = DataFrame()
     for name in col_names
-        df[!, name] = repeat([0.0], total_steps)
+        df[!, name] = repeat([0.0::T], total_steps)
     end
     
     t = start_t
@@ -69,6 +74,11 @@ function simulate(start_t::T,
         next_q = Dict([])
 
         # store record here
+        for adrs in recording_agents
+            for k, v in state_dict(get_agent(network, adrs))
+                df[[index],[col_name(adrs, k)]] = v
+            end
+        end
         
         function push_task(address, next_t)
             next_q[address] = next_t
@@ -110,7 +120,7 @@ function simulate(start_t::T,
         t += dt
         index += 1
     end
-    
+    df
 end
 
 
