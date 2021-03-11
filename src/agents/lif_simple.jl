@@ -2,7 +2,7 @@ module LIFSimple
 using ...Types
 using ...AgentParts.LIFNeuron
 using ...Network
-import ...Network: act, update
+import ...Network: act, update, state_dict
 using ...Signals
 import ...Signals: add_acceptor, add_donor, can_add_acceptor, can_add_donor
 
@@ -43,8 +43,8 @@ function act(address::Address,
     
     function inject_fn()
         new_stack_t_delta_v, signals = take_due_signals(t, agent.stack_t_delta_v)
-        if ! isnothing(agent.states.refraction_end) # at end of refraction
-            signals = filter(s -> s.t >= agent.states.refraction_end, signals)
+        if ! isnothing(agent.states.refractory_end) # at end of refractory
+            signals = filter(s -> s.t >= agent.states.refractory_end, signals)
         end
         return (0, reduce((acc, x) -> acc + x.delta_v,
                           signals;
@@ -124,6 +124,11 @@ function add_acceptor(agent::LIFSimpleAgent, address::Address, signal_name)
     else
         error("LIFSimpleAgent cannot add $signal_name acceptors!")
     end
+end
+
+function state_dict(agent::LIFSimpleAgent)
+    return Dict(["v" => agent.states.v,
+                 "refractory" => isnothing(agent.states.refractory_end) ? 0 : 1])
 end
 
 

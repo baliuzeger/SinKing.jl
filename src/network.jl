@@ -1,6 +1,7 @@
 module Network
 using ..Types
 export Address, Point3D, Seat, Population, simulate, push_seat, get_agent
+using DataFrames
 
 # struct Network
 #     populations::Dict{string, Vector{Agent}}
@@ -51,16 +52,23 @@ function simulate(start_t::T,
                   current_q::Dict{Address{U}, T},
                   recording_agents::Vector{Address{U}}) where {T <: AbstractFloat, U <: Unsigned}
 
-    total_steps = (end_t - start_t) ÷ dt + 1
+    total_steps = Int((end_t - start_t) ÷ dt + 1)
     # function col_name(adrs::Address, state_name)
     #     "$(adrs.population)_$(adrs.num)_$(k)"
     # end
-    col_name = (adrs::Address, state_name::String) -> "$(adrs.population)_$(adrs.num)_$(k)"
-    col_names = reduce(recording_agents; init = []) do acc, adrs
-        for k, v in state_dict(get_agent(network, adrs))
-            push!(acc, col_name(adrs, k))
-        end
-    end
+    col_name = (adrs::Address, state_name::String) -> "$(adrs.population)_$(adrs.num)_$(state_name)"
+    col_names = reduce((acc, adrs) -> [acc;
+                                       reduce((acc, x) -> [acc; [col_name(adrs, x[1])]],
+                                              state_dict(get_agent(network, adrs)),
+                                              init = [])],
+                       recording_agents;
+                       init = [])
+    # col_names = reduce(recording_agents; init = []) do acc, adrs
+    #     for (k, v) in state_dict(get_agent(network, adrs))
+    #         push!(acc, col_name(adrs, k))
+    #     end
+    #     return acc
+    # end
     df = DataFrame()
     for name in col_names
         df[!, name] = repeat([0.0::T], total_steps)
@@ -68,15 +76,15 @@ function simulate(start_t::T,
     
     t = start_t
     index = 1
-    while t < end_t
+    while index < total_steps
         state_updates::Dict{Address, Any} = Dict([])
         accepted_signals::Dict{Address, Vector{Signal}} = Dict([])
         next_q = Dict([])
 
         # store record here
         for adrs in recording_agents
-            for k, v in state_dict(get_agent(network, adrs))
-                df[[index],[col_name(adrs, k)]] = v
+            for (k, v) in state_dict(get_agent(network, adrs))
+                df[index, col_name(adrs, k)] = v
             end
         end
         
