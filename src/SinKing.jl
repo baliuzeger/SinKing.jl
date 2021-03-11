@@ -14,6 +14,7 @@ end
 module Agents
 include("./agents/iz_cond_mrkrm.jl")
 include("./agents/lif_simple.jl")
+include("./agents/dc_source.jl")
 end
 
 end # module

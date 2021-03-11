@@ -101,9 +101,9 @@ function simulate(start_t::T,
                     get_agent(network ,adrs),
                     t,
                     dt,
-                    push_task,
-                    update_agent,
-                    push_signal)
+                    push_task, # (adress, next_t)
+                    update_agent, # (address, new_states)
+                    push_signal) # (adrs, signal)
             else
                 next_q[adrs] = work_t
             end

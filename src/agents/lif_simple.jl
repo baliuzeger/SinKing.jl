@@ -109,7 +109,7 @@ function can_add_acceptor(agent::LIFSimpleAgent, signal_name::String)
     end
 end
 
-function add_donor(agent::LIFSimpleAgent, address::Address, signal_name)
+function add_donor(agent::LIFSimpleAgent, signal_name::String, address::Address)
     if signal_name == name_t_delta_v
         push!(agent.donors_t_delta_v, address)
     else
@@ -118,7 +118,7 @@ function add_donor(agent::LIFSimpleAgent, address::Address, signal_name)
     
 end
 
-function add_acceptor(agent::LIFSimpleAgent, address::Address, signal_name)
+function add_acceptor(agent::LIFSimpleAgent, signal_name::String, address::Address)
     if signal_name == name_t_delta_v
         push!(agent.acceptors_t_delta_v, address)
     else
