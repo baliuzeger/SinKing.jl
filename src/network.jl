@@ -83,7 +83,7 @@ function simulate(start_t::T,
             next_q[address] = next_t
         end
 
-        function update_agent(address, updates) # also should update stacks!!!!!
+        function update_agent(address, updates)
             agent_updates[address] = updates
         end
 
