@@ -68,21 +68,6 @@ function connect(network::Dict{String, Population{U, T}},
     end
 end
 
-## let agent be pure data without functions / methods., remove Donor / Acceptor.
-
-# struct Donor
-#     set # fn for dependency injection of putter & taker.
-#     address
-#     put # send signal to acceptor side
-# end
-
-# struct Acceptor{T}
-#     set
-#     address
-#     take # take signals into stack.
-#     stack::Vector{T}
-# end
-
 end # Module end
 
 
