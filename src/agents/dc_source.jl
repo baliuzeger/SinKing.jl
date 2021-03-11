@@ -8,7 +8,7 @@ import ...Signals: add_acceptor, add_donor, can_add_acceptor, can_add_donor
 struct DCSourceAgent{T <: AbstractFloat} <: Agent
     current::T
     acceptors_dc::Vector{Address}
-    
+    stack_dc_update::Vector{DCUpdate}
 end
 
 function update(agent::DCSourceAgent{T}, current::T) where {T <: AbstractFloat}
@@ -26,6 +26,9 @@ function act(address::Address,
              update_agent,
              push_signal) where {T <: AbstractFloat}
 
+    for upd in agent.stack_dc_update
+        
+    end
 
     
 end

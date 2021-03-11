@@ -73,11 +73,6 @@ function act(address::Address,
            lif_push_task)
 
     update_agent(address, new_states)
-    # update_agent(address, LIFSimpleAgent(new_states,
-    #                                      agent.params,
-    #                                      agent.acceptors_t_delta_v,
-    #                                      agent.donors_t_delta_v,
-    #                                      new_stack_t_delta_v))
 
     push_task(address, next_t)
     if fired
