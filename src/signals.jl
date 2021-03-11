@@ -4,7 +4,7 @@ using ..Network
 using ..Types
 export take_due_signals, name_t_delta_v, connect,
     TimedDeltaV, TimedExctDeltaCond, TimedInhbtDeltaCond, TimedMarkram, DCUpdate, name_dc_update,
-    add_acceptor, add_donor, can_add_acceptor, can_add_donor
+    add_acceptor, add_donor, can_add_acceptor, can_add_donor, accept
 
 abstract type TimedSignal <: Signal end
 
@@ -57,6 +57,7 @@ function can_add_acceptor end
 function can_add_donor end
 function add_acceptor end
 function add_donor end
+function accept end
 
 function connect(network::Dict{String, Population{U, T}},
                  signal_name::String,

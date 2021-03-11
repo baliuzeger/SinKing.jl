@@ -3,7 +3,7 @@ using ...Types
 using ...Network
 import ...Network: act, update, state_dict
 using ...Signals
-import ...Signals: add_acceptor, add_donor, can_add_acceptor, can_add_donor
+import ...Signals: add_acceptor, add_donor, can_add_acceptor, can_add_donor, accept
 
 struct DCSourceAgent{T <: AbstractFloat} <: Agent
     current::T
@@ -75,5 +75,9 @@ can_add_donor(agent::DCSourceAgent, signal_name::String) = false
 add_donor(agent::DCSourceAgent, signal_name::String, address::Address) = error(
     "DCSourceAgent cannot add $signal_name donors!"
 )
+
+function accept(agent::DCSourceAgent, signal::DCUpdate)
+    push!(agent.stack_dc_update, signal)
+end
 
 end # module end

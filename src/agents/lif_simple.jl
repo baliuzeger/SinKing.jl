@@ -4,7 +4,7 @@ using ...AgentParts.LIFNeuron
 using ...Network
 import ...Network: act, update, state_dict
 using ...Signals
-import ...Signals: add_acceptor, add_donor, can_add_acceptor, can_add_donor
+import ...Signals: add_acceptor, add_donor, can_add_acceptor, can_add_donor, accept
 
 export LIFSimpleAgent, accept, LIFSimpleParams
 
