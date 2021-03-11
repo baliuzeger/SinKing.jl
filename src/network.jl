@@ -1,12 +1,9 @@
 module Network
-using ..Types
-export Address, Point3D, Seat, Population, simulate, push_seat, get_agent
+export Address, Point3D, Seat, Population, simulate, push_seat, get_agent, Agent, AgentUpdates
 using DataFrames
 
-# struct Network
-#     populations::Dict{string, Vector{Agent}}
-#     # queue::Vector{(AbstractFloat, Address)} # (time, address)
-# end
+abstract type Agent end
+abstract type AgentUpdates end
 
 struct Address{T <: Unsigned}
     population::String

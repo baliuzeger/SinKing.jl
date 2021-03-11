@@ -1,11 +1,11 @@
 module Signals
 
 using ..Network
-using ..Types
-export take_due_signals, name_t_delta_v, connect,
+export take_due_signals, name_t_delta_v, connect, Signal
     TimedDeltaV, TimedExctDeltaCond, TimedInhbtDeltaCond, TimedMarkram, DCUpdate, name_dc_update,
     add_acceptor, add_donor, can_add_acceptor, can_add_donor, accept
 
+abstract type Signal end
 abstract type TimedSignal <: Signal end
 
 function take_due_signals(t::T, signals::Vector{U}) where {T <: AbstractFloat, U <: TimedSignal}
@@ -47,9 +47,10 @@ struct TimedDeltaV{T <: AbstractFloat} <: TimedSignal
 end
 
 const name_dc_update = "DCUpdate"
-struct DCUpdate{T <: AbstractFloat} <: TimedSignal
+struct DCUpdate{T <: AbstractFloat, U <: Unsigned} <: TimedSignal
     t::T
     current::T
+    source::Address{U}
 end
     
 
