@@ -47,8 +47,8 @@ struct TimedDeltaV{T <: AbstractFloat} <: TimedSignal
 end
 
 const name_dc_update = "DCUpdate"
-struct DCUpdate{T <: AbstractFloat}
-    start_t::T
+struct DCUpdate{T <: AbstractFloat} <: TimedSignal
+    t::T
     current::T
 end
     

@@ -27,6 +27,7 @@ function act(address::Address,
              push_signal) where {T <: AbstractFloat}
 
     for upd in agent.stack_dc_update
+        new_stack_dc_update, updates = take_due_signals(t + dt, agent.stack_dc_update)
         
     end
 

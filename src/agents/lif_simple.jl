@@ -22,10 +22,16 @@ mutable struct LIFSimpleAgent <: Agent
     stack_t_delta_v::Vector{TimedDeltaV}
 end
 
+struct LIFSimpleUpdate <: AgentUpdates
+    states::LIFStates
+    stack_t_delta_v::Vector{TimedDeltaV}
+end
+
 LIFSimpleAgent(states::LIFStates, params::LIFSimpleParams) = LIFSimpleAgent(states, params, [], [], [])
 
-function update(agent::LIFSimpleAgent, states::LIFStates)
-    agent.states = states
+function update(agent::LIFSimpleAgent, update::LIFSimpleUpdate)
+    agent.states = update.states
+    agent.stack_t_delta_v = update.stack_t_delta_v
 end
 
 function act(address::Address,
@@ -72,7 +78,7 @@ function act(address::Address,
            fire_fn,
            lif_push_task)
 
-    update_agent(address, new_states)
+    update_agent(address, LIFSimpleUpdate(new_states, new_stack_t_delta_v))
 
     push_task(address, next_t)
     if fired

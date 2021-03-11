@@ -68,7 +68,7 @@ function simulate(start_t::T,
     t = start_t
     index = 1
     while index <= total_steps
-        state_updates::Dict{Address, Any} = Dict([])
+        agent_updates::Dict{Address, AgentUpdates} = Dict([])
         accepted_signals::Dict{Address, Vector{Signal}} = Dict([])
         next_q = Dict([])
 
@@ -83,8 +83,8 @@ function simulate(start_t::T,
             next_q[address] = next_t
         end
 
-        function update_agent(address, states)
-            state_updates[address] = states
+        function update_agent(address, updates) # also should update stacks!!!!!
+            agent_updates[address] = updates
         end
 
         function push_signal(address, signal)
@@ -102,7 +102,7 @@ function simulate(start_t::T,
                     t,
                     dt,
                     push_task, # (adress, next_t)
-                    update_agent, # (address, new_states)
+                    update_agent, # (address, update)
                     push_signal) # (adrs, signal)
             else
                 next_q[adrs] = work_t
@@ -110,8 +110,8 @@ function simulate(start_t::T,
         end
 
         current_q = next_q
-        for (adrs, states) in state_updates
-            update(get_agent(network, adrs), states)
+        for (adrs, updates) in agent_updates
+            update(get_agent(network, adrs), updates)
         end
         for (adrs, signals) in accepted_signals
             foreach(s -> accept(get_agent(network, adrs), s), signals)
