@@ -9,6 +9,4 @@ struct DCPort{T <: AbstractFloat, U <: Unsigned}
     stack::Vector{TimedDC{T, U}}
 end
 
-
-
 end # module end

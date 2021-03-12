@@ -104,22 +104,43 @@ function act(address::Address,
     end
 end
 
-function accept(agent::LIFSimpleAgent{T, U}, signal::TimedDeltaV) where{T <: AbstractFloat, U <: Unsigned}
+function accept(agent::LIFSimpleAgent{T, U}, signal::TimedDeltaV{T}) where{T <: AbstractFloat, U <: Unsigned}
     push!(agent.stack_t_delta_v, signal)
+end
+
+function accept(agent::LIFSimpleAgent{T, U},
+                signal::TimedAdrsDC{T, U}) where{T <: AbstractFloat, U <: Unsigned}
+    found_port = false
+    for port in agent.ports_dc
+        if port.address == signal.address
+            push!(port.stack, TimedDC(signal.t, signal.current))
+            found_port = true
+        end
+    end
+    if ! found_port
+        error(
+            "LIFSimpleAgent accept $(name_t_adrs_dc) from unregistered donor $(signal.adress.population)-$(signal.adress.num)!"
+        )
+    end
 end
 
 function can_add_donor(agent::LIFSimpleAgent{T, U},
                        signal_name::String) where{T <: AbstractFloat, U <: Unsigned}
-    signal_name == name_t_delta_v
+    signal_name == name_t_delta_v || signal_name == name_t_adrs_dc
 end
 
 function add_donor(agent::LIFSimpleAgent{T, U},
                    signal_name::String,
                    address::Address{U}) where{T <: AbstractFloat, U <: Unsigned}
     if can_add_donor(agent, signal_name)
-        push!(agent.donors_t_delta_v, address)
+        if signal_name == name_t_delta_v
+            push!(agent.donors_t_delta_v, address)
+        elseif signal_name == name_t_adrs_dc
+            push!(agent.ports_dc, DCPort(address, 0.0, []))
+        else
+            error("Got unhandled signal_name on add_donor.")
     else
-        error("LIFSimpleAgent cannot add $signal_name donors!")
+        error("LIFSimpleAgent cannot add $signal_name for donor at $(address.population)-$(address.num)!")
     end
 end
 
@@ -141,37 +162,6 @@ end
 function state_dict(agent::LIFSimpleAgent{T, U}) where{T <: AbstractFloat, U <: Unsigned}
     Dict(["v" => agent.states.v,
           "refractory" => isnothing(agent.states.refractory_end) ? 0 : 1])
-end
-
-function accept(agent:: LIFSimpleAgent{T, U},
-                signal::TimedAdrsDC{T, U}) where{T <: AbstractFloat, U <: Unsigned}
-    found_port = false
-    for port in agent.ports_dc
-        if port.address == signal.address
-            push!(port.stack, TimedDC(signal.t, signal.current))
-            found_port = true
-        end
-    end
-    if ! found_port
-        error(
-            "LIFSimpleAgent accept $(name_t_adrs_dc) from $(signal.adress.population)-$(signal.adress.num)"
-        )
-    end
-end
-
-function can_add_donor(agent::LIFSimpleAgent{T, U},
-                       signal_name::String) where{T <: AbstractFloat, U <: Unsigned}
-    signal_name == name_t_adrs_dc
-end
-
-function add_donor(agent::LIFSimpleAgent{T, U},
-                   signal_name::String,
-                   address::Address{U}) where{T <: AbstractFloat, U <: Unsigned}
-    if can_add_donor(agent, signal_name)
-        push!(agent.ports_dc, DCPort(address, 0.0, []))
-    else
-        error("LIFSimpleAgent cannot add $signal_name acceptors!")
-    end
 end
 
 end # module end
