@@ -18,16 +18,16 @@ function evolve(t::T,
                 dt::T,
                 states::LIFStates,
                 params::LIFParams,
-                inject_fn,
-                update,
-                fire_fn,
-                push_task) where {T <: AbstractFloat}
+                inject_fn, # trigger handling accepted signals & return injections
+                update, # udpate LIF states
+                fire_fn, # trigger actions of fire.
+                push_task) where {T <: AbstractFloat} # push self's next task by next_t
     
     if isnothing(states.refractory_end) || states.refractory_end <= t
         i_syn, delta_v = inject_fn()
         new_v = states.v +  dt * (i_syn + (states.v - params.v_steady) / params.tau_leak) + delta_v
         if new_v >= 30.0
-            fire_fn(t, dt)
+            fire_fn()
             refractory_end = t + params.tau_refractory
             update(LIFStates(params.v_reset, refractory_end))
             # push_task(refractory_end) # lazy!!!

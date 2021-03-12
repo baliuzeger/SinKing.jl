@@ -6,7 +6,7 @@ using ...Signals
 struct DCPort{T <: AbstractFloat, U <: Unsigned}
     address::Address
     current::T
-    stack::Vector{TimedAdrsDC{T, U}}
+    stack::Vector{TimedDC{T, U}}
 end
 
 

@@ -147,7 +147,14 @@ function accept(agent:: LIFSimpleAgent{T, U},
     found_port = false
     for port in agent.ports_dc
         if port.address == signal.address
+            push!(port.stack, TimedDC(signal.t, signal.current))
+            found_port = true
         end
+    end
+    if ! found_port
+        error(
+            "LIFSimpleAgent accept $(name_t_adrs_dc) from $(signal.adress.population)-$(signal.adress.num)"
+        )
     end
 end
 
