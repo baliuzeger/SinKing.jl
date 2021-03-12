@@ -33,6 +33,7 @@ struct LIFSimpleUpdate{T <: AbstractFloat, U <: Unsigned} <: AgentUpdates
     states::LIFStates
     stack_t_delta_v::Vector{TimedDeltaV}
     ports_dc::Vector{DCPort{T, U}}
+    sum_current::T
 end
 
 function update(agent::LIFSimpleAgent{T, U},
@@ -49,15 +50,14 @@ function act(address::Address,
              update_agent,
              push_signal) where{T <: AbstractFloat, U <: Unsigned}
 
-    new_states = agent.states
-    new_stack_t_delta_v = agent.stack_t_delta_v
+    updates = LIFSimpleUpdate(agent.states, agent.stack_t_delta_v, agent.ports_dc, agent.sum_current)
     fired = false
     next_t = t + dt
     
     function inject_fn()
         
         
-        new_stack_t_delta_v, signals = take_due_signals(t, agent.stack_t_delta_v)
+        updates.stack_t_delta_v, signals = take_due_signals(t, agent.stack_t_delta_v)
         if ! isnothing(agent.states.refractory_end) # at end of refractory
             signals = filter(s -> s.t >= agent.states.refractory_end, signals)
         end
@@ -65,7 +65,7 @@ function act(address::Address,
     end
 
     function lif_update(states::LIFStates)
-        new_states = states
+        updates.states = states
     end
 
     function fire_fn()
@@ -85,7 +85,7 @@ function act(address::Address,
            fire_fn,
            lif_push_task)
 
-    update_agent(address, LIFSimpleUpdate(new_states, new_stack_t_delta_v))
+    update_agent(address, updates)
 
     push_task(address, next_t)
     if fired
