@@ -47,18 +47,23 @@ struct TimedDeltaV{T <: AbstractFloat} <: TimedSignal
 end
 
 const name_t_dc = "TimedDC"
-struct TimedDC{T <: AbstractFloat, U <: Unsigned} <: TimedSignal
+struct TimedDC{T <: AbstractFloat} <: TimedSignal
+    t::T # start time of the current
+    current::T
+end
+
+const name_t_adrs_dc = "TimedAdrsDC"
+struct TimedAdrsDC{T <: AbstractFloat, U <: Unsigned} <: TimedSignal
     t::T # start time of the current
     current::T
     source::Address{U}
-end
-    
+end 
 
-function can_add_acceptor end
+function can_add_acceptor end # (agent, signal_name) -> bool
 function can_add_donor end
-function add_acceptor end
-function add_donor end
-function accept end
+function add_acceptor end # (agent, signal_name, acptr_address) -> ()
+function add_donor end # (agent, signal_name, dnr_address) -> ()
+function accept end # (agent, signal) -> ()
 
 function connect(network::Dict{String, Population{U, T}},
                  signal_name::String,

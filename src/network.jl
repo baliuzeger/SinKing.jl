@@ -39,8 +39,8 @@ function get_agent(network::Dict{String, Population{T, V}},
 end
 
 function act end
-function update end
-function state_dict end
+function update end # (address, AgentUpdates) -> ()
+function state_dict end # () -> Dict
 
 function simulate(start_t::T,
                   end_t::T,
