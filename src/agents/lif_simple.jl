@@ -14,24 +14,26 @@ struct LIFSimpleParams
 end
 
 mutable struct LIFSimpleAgent{T <: AbstractFloat, U <: Unsigned} <: Agent
-    # address::Address
-    states::LIFStates
-    params::LIFSimpleParams
-    acceptors_t_delta_v::Vector{Address} # agents that accept from self.
-    donors_t_delta_v::Vector{Address} # agents that donate to self.
-    stack_t_delta_v::Vector{TimedDeltaV}
+    states::LIFStates{T}
+    params::LIFSimpleParams{T}
+    acceptors_t_delta_v::Vector{Address{U}} # agents that accept from self.
+    donors_t_delta_v::Vector{Address{U}} # agents that donate to self.
+    stack_t_delta_v::Vector{TimedDeltaV{T}}
     ports_dc::Vector{DCPort{T, U}}
+    sum_current::T
 end
+
+function LIFSimpleAgent(states::LIFStates{T},
+                        params::LIFSimpleParams{T}) where {T <: AbstractFloat, U <: Unsigned}
+    LIFSimpleAgent{T, U}(states, params, [], [], [], 0.0::T)
+end
+
 
 struct LIFSimpleUpdate{T <: AbstractFloat, U <: Unsigned} <: AgentUpdates
     states::LIFStates
     stack_t_delta_v::Vector{TimedDeltaV}
     ports_dc::Vector{DCPort{T, U}}
 end
-
-LIFSimpleAgent(
-    states::LIFStates, params::LIFSimpleParams
-) where {T <: AbstractFloat, U <: Unsigned} = LIFSimpleAgent{T, U}(states, params, [], [], [])
 
 function update(agent::LIFSimpleAgent{T, U},
                 update::LIFSimpleUpdate{T, U}) where {T <: AbstractFloat, U <: Unsigned}
@@ -53,13 +55,13 @@ function act(address::Address,
     next_t = t + dt
     
     function inject_fn()
+        
+        
         new_stack_t_delta_v, signals = take_due_signals(t, agent.stack_t_delta_v)
         if ! isnothing(agent.states.refractory_end) # at end of refractory
             signals = filter(s -> s.t >= agent.states.refractory_end, signals)
         end
-        return (0, reduce((acc, x) -> acc + x.delta_v,
-                          signals;
-                          init=0.0)) # (i_syn, delta_v)
+        (0, reduce((acc, x) -> acc + x.delta_v, signals; init=0.0)) # (i_syn, delta_v)
     end
 
     function lif_update(states::LIFStates)
