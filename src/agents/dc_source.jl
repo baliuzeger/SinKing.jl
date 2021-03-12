@@ -77,16 +77,16 @@ function add_acceptor(agent::DCSourceAgent{T, U},
     end
 end
 
-function can_add_donor(agent::DCSourceAgent{T, U},
-                       signal_name::String) where {T <: AbstractFloat, U <: Unsigned}
-    false
-end
+# function can_add_donor(agent::DCSourceAgent{T, U},
+#                        signal_name::String) where {T <: AbstractFloat, U <: Unsigned}
+#     false
+# end
 
-function add_donor(agent::DCSourceAgent{T, U},
-                   signal_name::String,
-                   address::Address{U}) where {T <: AbstractFloat, U <: Unsigned}
-    error("DCSourceAgent cannot add $signal_name donors!")
-end
+# function add_donor(agent::DCSourceAgent{T, U},
+#                    signal_name::String,
+#                    address::Address{U}) where {T <: AbstractFloat, U <: Unsigned}
+#     error("DCSourceAgent cannot add $signal_name donors!")
+# end
 
 function accept(agent::DCSourceAgent{T, U}, signal::TimedDC{T}) where {T <: AbstractFloat, U <: Unsigned}
     push!(agent.stack_t_dc, signal)
