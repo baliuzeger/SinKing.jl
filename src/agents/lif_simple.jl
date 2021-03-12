@@ -20,7 +20,6 @@ mutable struct LIFSimpleAgent{T <: AbstractFloat, U <: Unsigned} <: Agent
     donors_t_delta_v::Vector{Address{U}} # agents that donate to self.
     stack_t_delta_v::Vector{TimedDeltaV{T}}
     ports_dc::Vector{DCPort{T, U}}
-    sum_current::T
 end
 
 function LIFSimpleAgent(states::LIFStates{T},
@@ -33,13 +32,13 @@ struct LIFSimpleUpdate{T <: AbstractFloat, U <: Unsigned} <: AgentUpdates
     states::LIFStates
     stack_t_delta_v::Vector{TimedDeltaV}
     ports_dc::Vector{DCPort{T, U}}
-    sum_current::T
 end
 
 function update(agent::LIFSimpleAgent{T, U},
                 update::LIFSimpleUpdate{T, U}) where {T <: AbstractFloat, U <: Unsigned}
     agent.states = update.states
     agent.stack_t_delta_v = update.stack_t_delta_v
+    agent.ports_dc = updates.ports_dc
 end
 
 function act(address::Address,
@@ -55,13 +54,21 @@ function act(address::Address,
     next_t = t + dt
     
     function inject_fn()
+        i_syn, updates.ports_dc = reduce(agents.ports_dc; init=(0.0, [])) do acc, x
+            keep, take = take_due_signals(x.stack)
+            new_t_dc = reduce((acc2, x2) -> acc2.t < x2.t ? x2 : acc2,
+                              take;
+                              init=TimedDC(t - dt, x.t_dc))
+            (acc[1] + new_t_dc.current, [acc[2]..., DCPort(x.address, new_t_dc.current, keep)])
+        end
         
-        
-        updates.stack_t_delta_v, signals = take_due_signals(t, agent.stack_t_delta_v)
+        updates.stack_t_delta_v, tdv_signals = take_due_signals(t, agent.stack_t_delta_v)
         if ! isnothing(agent.states.refractory_end) # at end of refractory
             signals = filter(s -> s.t >= agent.states.refractory_end, signals)
         end
-        (0, reduce((acc, x) -> acc + x.delta_v, signals; init=0.0)) # (i_syn, delta_v)
+        delta_v = reduce((acc, x) -> acc + x.delta_v, tdv_signals; init=0.0)
+
+        (i_syn, delta_v) # (i_syn, delta_v)
     end
 
     function lif_update(states::LIFStates)
@@ -103,16 +110,12 @@ end
 
 function can_add_donor(agent::LIFSimpleAgent{T, U},
                        signal_name::String) where{T <: AbstractFloat, U <: Unsigned}
-    if signal_name == name_t_delta_v
-        return true
-    else
-        return false
-    end
+    signal_name == name_t_delta_v
 end
 
 function add_donor(agent::LIFSimpleAgent{T, U},
                    signal_name::String,
-                   address::Address) where{T <: AbstractFloat, U <: Unsigned}
+                   address::Address{U}) where{T <: AbstractFloat, U <: Unsigned}
     if can_add_donor(agent, signal_name)
         push!(agent.donors_t_delta_v, address)
     else
@@ -122,16 +125,12 @@ end
 
 function can_add_acceptor(agent::LIFSimpleAgent{T, U},
                           signal_name::String) where{T <: AbstractFloat, U <: Unsigned}
-    if signal_name == name_t_delta_v
-        return true
-    else
-        return false
-    end
+    signal_name == name_t_delta_v
 end
 
 function add_acceptor(agent::LIFSimpleAgent{T, U},
                       signal_name::String,
-                      address::Address) where{T <: AbstractFloat, U <: Unsigned}
+                      address::Address{U}) where{T <: AbstractFloat, U <: Unsigned}
     if can_add_acceptor(agent, signal_name)
         push!(agent.acceptors_t_delta_v, address)
     else
@@ -142,6 +141,9 @@ end
 function state_dict(agent::LIFSimpleAgent{T, U}) where{T <: AbstractFloat, U <: Unsigned}
     return Dict(["v" => agent.states.v,
                  "refractory" => isnothing(agent.states.refractory_end) ? 0 : 1])
+
+
+    
 end
 
 function accept(agent:: LIFSimpleAgent{T, U},
@@ -160,7 +162,19 @@ function accept(agent:: LIFSimpleAgent{T, U},
     end
 end
 
-can_add_donor
-add_donor
+function can_add_donor(agent::LIFSimpleAgent{T, U},
+                       signal_name::String) where{T <: AbstractFloat, U <: Unsigned}
+    signal_name == name_t_adrs_dc
+end
+
+function add_donor(agent::LIFSimpleAgent{T, U},
+                   signal_name::String,
+                   address::Address{U}) where{T <: AbstractFloat, U <: Unsigned}
+    if can_add_donor(agent, signal_name)
+        push!(agent.ports_dc, )
+    else
+        error("LIFSimpleAgent cannot add $signal_name acceptors!")
+    end
+end
 
 end # module end
