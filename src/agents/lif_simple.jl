@@ -139,11 +139,8 @@ function add_acceptor(agent::LIFSimpleAgent{T, U},
 end
 
 function state_dict(agent::LIFSimpleAgent{T, U}) where{T <: AbstractFloat, U <: Unsigned}
-    return Dict(["v" => agent.states.v,
-                 "refractory" => isnothing(agent.states.refractory_end) ? 0 : 1])
-
-
-    
+    Dict(["v" => agent.states.v,
+          "refractory" => isnothing(agent.states.refractory_end) ? 0 : 1])
 end
 
 function accept(agent:: LIFSimpleAgent{T, U},
@@ -171,7 +168,7 @@ function add_donor(agent::LIFSimpleAgent{T, U},
                    signal_name::String,
                    address::Address{U}) where{T <: AbstractFloat, U <: Unsigned}
     if can_add_donor(agent, signal_name)
-        push!(agent.ports_dc, )
+        push!(agent.ports_dc, DCPort(address, 0.0, []))
     else
         error("LIFSimpleAgent cannot add $signal_name acceptors!")
     end
