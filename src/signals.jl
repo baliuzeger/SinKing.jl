@@ -1,8 +1,8 @@
 module Signals
 
 using ..Network
-export take_due_signals, name_t_delta_v, connect, Signal
-    TimedDeltaV, TimedExctDeltaCond, TimedInhbtDeltaCond, TimedMarkram, DCUpdate, name_dc_update,
+export take_due_signals, name_t_delta_v, connect, Signal,
+    TimedDeltaV, TimedExctDeltaCond, TimedInhbtDeltaCond, TimedMarkram, TimedDC, name_t_dc,
     add_acceptor, add_donor, can_add_acceptor, can_add_donor, accept
 
 abstract type Signal end
@@ -46,9 +46,9 @@ struct TimedDeltaV{T <: AbstractFloat} <: TimedSignal
     delta_v::T
 end
 
-const name_dc_update = "DCUpdate"
-struct DCUpdate{T <: AbstractFloat, U <: Unsigned} <: TimedSignal
-    t::T
+const name_t_dc = "TimedDC"
+struct TimedDC{T <: AbstractFloat, U <: Unsigned} <: TimedSignal
+    t::T # start time of the current
     current::T
     source::Address{U}
 end

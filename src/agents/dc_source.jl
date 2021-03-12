@@ -8,12 +8,12 @@ import ...Signals: add_acceptor, add_donor, can_add_acceptor, can_add_donor, acc
 struct DCSourceAgent{T <: AbstractFloat} <: Agent
     current::T
     acceptors_dc::Vector{Address}
-    stack_dc_update::Vector{DCUpdate}
+    stack_dc_update::Vector{TimedDC}
 end
 
 struct DCSourceUpdate{T <: AbstractFloat} <: AgentUpdates
     current::T
-    stack_dc_update::Vector{DCUpdate}
+    stack_dc_update::Vector{TimedDC}
 end
 
 function update(agent::DCSourceAgent{T}, current::T) where {T <: AbstractFloat}
@@ -62,7 +62,7 @@ function act(address::Address,
     update_agent(address, DCSourceUpdate(new_current, new_stack_dc_update))
 end
 
-can_add_acceptor(agent::DCSourceAgent, signal_name::String) = signal_name == name_dc_update ? true : false
+can_add_acceptor(agent::DCSourceAgent, signal_name::String) = signal_name == name_t_dc ? true : false
 function add_acceptor(agent::DCSourceAgent, signal_name::String, address::Address)
     if can_add_acceptor(agent, signal_name)
         push!(agent.acceptors_dc)
@@ -76,7 +76,7 @@ add_donor(agent::DCSourceAgent, signal_name::String, address::Address) = error(
     "DCSourceAgent cannot add $signal_name donors!"
 )
 
-function accept(agent::DCSourceAgent, signal::DCUpdate)
+function accept(agent::DCSourceAgent, signal::TimedDC)
     push!(agent.stack_dc_update, signal)
 end
 
