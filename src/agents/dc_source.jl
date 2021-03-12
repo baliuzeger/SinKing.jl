@@ -31,16 +31,10 @@ function act(address::Address{U},
              push_signal) where {T <: AbstractFloat, U <: Unsigned}
 
     new_current = agent.current
-    new_stack_t_dc = agent.stack_t_dc
     new_stack_t_dc, updates = take_due_signals(t + dt, agent.stack_t_dc)
     
-    if length(updates) > 0
-        signal_upd = update[1]
-        for upd in updates
-            if upd.t > signal_upd.t
-                signal_upd = upd
-            end
-        end
+    if length(updates) > 0 # update current by the latest TimedDC
+        signal_upd = reduce((acc, x) -> x.t > acc.t ? x : acc, update; init=update[1])
         new_current = signal_upd.current
         for adrs in agent.acceptors_dc
             push_task(adrs, signal_upd.t)
@@ -48,15 +42,9 @@ function act(address::Address{U},
         end
     end
 
-    if length(new_stack_t_dc) > 0
-        # push task for the next update
-        next_t = new_stack_t_dc[1].t
-        for upd in new_stack_t_dc
-            if upd.t < next_t
-                next_t = upd.t
-            end
-        end
-        push_task(address, next_t - dt)
+    if length(new_stack_t_dc) > 0 # push task for the next update
+        next_t_dc = reduce((acc, x) -> x.t < acc.t ? x : acc, new_stack_t_dc; init=new_stack_t_dc[1])
+        push_task(address, next_t_dc.t - dt)
     end
 
     update_agent(address, DCSourceUpdate(new_current, new_stack_t_dc))
