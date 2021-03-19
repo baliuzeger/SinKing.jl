@@ -16,10 +16,14 @@ struct Point3D{T <: AbstractFloat}
     x3::T
 end
 
+Point3D{T}() where {T <: AbstractFloat} = Point3D{T}(zero(T), zero(T), zero(T))
+
 struct Seat{T <: AbstractFloat}
     position::Point3D{T}
     agent::Agent
 end
+
+Seat{T}(agent::Agent) where {T <: AbstractFloat} = Seat(Point3D{T}(zero(T), zero(T), zero(T)), agent)
 
 mutable struct Population{T <: Unsigned, V <: AbstractFloat}
     max::T

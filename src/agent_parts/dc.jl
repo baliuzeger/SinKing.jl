@@ -1,5 +1,5 @@
 module DC
-export DCPort
+export DCPort, gen_dc_updates
 using ...Network
 using ...Signals
 
@@ -8,5 +8,15 @@ struct DCPort{T <: AbstractFloat, U <: Unsigned}
     current::T
     stack::Vector{TimedDC{T, U}}
 end
+
+function gen_dc_updates{T <: AbstractFloat, U <: Unsigned}(ports::Vector{DCPort{T, U}})
+    reduce(ports; init=(zero(T), Vector{DCPort{T, U}}(undef, 0))) do acc, port
+        keep, take = take_due_signals(port.stack)
+        last_t_dc = reduce((acc2, x2) -> acc2.t < x2.t ? x2 : acc2,
+                           take;
+                           init=TimedDC(t - dt, port.current))
+        (acc[1] + last_t_dc.current, [acc[2]..., DCPort(port.address, last_t_dc.current, keep)])
+    end
+end # return (i_syn, updates.ports_dc) for DC acceptor.
 
 end # module end

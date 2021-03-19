@@ -54,13 +54,7 @@ function act(address::Address,
     next_t = t + dt
     
     function inject_fn()
-        i_syn, updates.ports_dc = reduce(agents.ports_dc; init=(0.0, [])) do acc, x
-            keep, take = take_due_signals(x.stack)
-            new_t_dc = reduce((acc2, x2) -> acc2.t < x2.t ? x2 : acc2,
-                              take;
-                              init=TimedDC(t - dt, x.t_dc))
-            (acc[1] + new_t_dc.current, [acc[2]..., DCPort(x.address, new_t_dc.current, keep)])
-        end
+        i_syn, updates.ports_dc = gen_dc_updates(agent.ports_dc)
         
         updates.stack_t_delta_v, tdv_signals = take_due_signals(t, agent.stack_t_delta_v)
         if ! isnothing(agent.states.refractory_end) # at end of refractory
