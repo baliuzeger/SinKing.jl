@@ -51,7 +51,7 @@ function act(address::Address,
 
     updates = LIFSimpleUpdate(agent.states, agent.stack_t_delta_v, agent.ports_dc, agent.sum_current)
     fired = false
-    next_t = t + dt
+    next_t = nothing
     
     function inject_fn()
         i_syn, updates.ports_dc = gen_dc_updates(agent.ports_dc)
@@ -74,7 +74,11 @@ function act(address::Address,
     end
 
     function lif_push_task(t)
-        next_t = t
+        if isnothing(next_t)
+            next_t = t
+        else
+            next_t = next_t < t ? next_t : t
+        end
     end
     
     evolve(t,
@@ -88,7 +92,9 @@ function act(address::Address,
 
     update_agent(address, updates)
 
-    push_task(address, next_t)
+    if ! isnothing(next_t)
+        push_task(address, next_t)
+    end
     if fired
         signal = TimedDeltaV(next_t, agent.params.delta_v)
         for adrs in agent.acceptors_t_delta_v
