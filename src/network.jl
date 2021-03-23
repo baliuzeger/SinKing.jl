@@ -1,6 +1,6 @@
 module Network
 export Address, Point3D, Seat, Population, simulate, push_seat, get_agent, Agent, AgentUpdates,
-    gen_all_q, Signal
+    gen_all_q, Signal, accept
 using DataFrames
 
 abstract type Agent end
@@ -47,6 +47,7 @@ end
 function act end
 function update end # (address, AgentUpdates) -> ()
 function state_dict end # () -> Dict
+function accept end # (agent, signal)
 
 function gen_all_q(nw::Dict{String, Population{T, V}}, t::V) where{T <: Unsigned, V <: AbstractFloat}
     reduce((q, pair) -> merge(q,
@@ -103,6 +104,7 @@ function simulate(start_t::T,
         end
 
         function push_signal(address, signal)
+            println("Simultae push_signal!")
             if haskey(accepted_signals, address)
                 push!(accepted_signals[address], signal)
             else
@@ -129,6 +131,7 @@ function simulate(start_t::T,
             update(get_agent(network, adrs), updates)
         end
         for (adrs, signals) in accepted_signals
+            println("$(adrs) accept $(signals)")
             foreach(s -> accept(get_agent(network, adrs), s), signals)
         end
         t += dt

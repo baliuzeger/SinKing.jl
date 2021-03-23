@@ -120,6 +120,7 @@ function accept(agent::LIFSimpleAgent{T, U},
     for port in agent.ports_dc
         if port.address == signal.address
             push!(port.stack, TimedDC(signal.t, signal.current))
+            println("LifSimple accept TimedAdrsDC!")
             found_port = true
         end
     end
@@ -153,6 +154,7 @@ end
 
 function can_add_acceptor(agent::LIFSimpleAgent{T, U},
                           signal_name::String) where{T <: AbstractFloat, U <: Unsigned}
+    #println("LIFSimple can_add_acceptor: $(signal_name) vs $(name_t_delta_v), $(signal_name == name_t_delta_v)")
     signal_name == name_t_delta_v
 end
 

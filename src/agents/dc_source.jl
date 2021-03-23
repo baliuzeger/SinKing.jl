@@ -41,13 +41,18 @@ function act(address::Address{U},
              push_signal) where {T <: AbstractFloat, U <: Unsigned}
 
     new_current = agent.current
-    new_stack_t_dc, updates = take_due_signals(t + dt, agent.stack_t_dc)
+    new_stack_t_dc, due_stack = take_due_signals(t + dt, agent.stack_t_dc)
     
-    if length(updates) > 0 # update current by the latest TimedDC
-        signal_upd = reduce((acc, x) -> x.t > acc.t ? x : acc, updates; init=updates[1])
+    if length(due_stack) > 0 # update current by the latest TimedDC
+        println("t = $(t)")
+        println("DCSourceAgent due_stack > 0!")
+        println(agent.acceptors_t_adrs_dc)
+        signal_upd = reduce((acc, x) -> x.t > acc.t ? x : acc, due_stack; init=due_stack[1])
         new_current = signal_upd.current
         tadc = TimedAdrsDC(signal_upd.t, signal_upd.current, address)
+        println(tadc)
         for adrs in agent.acceptors_t_adrs_dc
+            println("donate to $(adrs)")
             push_task(adrs, signal_upd.t)
             push_signal(adrs, tadc)
         end
@@ -70,9 +75,11 @@ function add_acceptor(agent::DCSourceAgent{T, U},
                       signal_name::String,
                       address::Address{U}) where{T <: AbstractFloat, U <: Unsigned}
     if can_add_acceptor(agent, signal_name)
-        push!(agent.acceptors_t_adrs_dc)
+        #println("push acceptor of DCSourceAgent!")
+        push!(agent.acceptors_t_adrs_dc, address)
+        #println(agent.acceptors_t_adrs_dc)
     else
-        error("DCSourceAgent cannot add $signal_name acceptors!")
+        error("DCSourceAgent cannot add $signal_name acceptors!")        
     end
 end
 
