@@ -6,7 +6,7 @@ import ...Network: act, update, state_dict
 using ...Signals
 import ...Signals: add_acceptor, add_donor, can_add_acceptor, can_add_donor, accept
 
-struct DCSourceAgent{T <: AbstractFloat, U <: Unsigned} <: Agent
+mutable struct DCSourceAgent{T <: AbstractFloat, U <: Unsigned} <: Agent
     current::T
     acceptors_t_adrs_dc::Vector{Address{U}}
     stack_t_dc::Vector{TimedDC{T}}
@@ -19,13 +19,15 @@ function DCSourceAgent{T, U}(current::T) where {T <: AbstractFloat, U <: Unsigne
     #                     Vector{TimedDC{T}}(undef, 0))
 end
 
-struct DCSourceUpdate{T <: AbstractFloat} <: AgentUpdates
+struct DCSourceUpdates{T <: AbstractFloat} <: AgentUpdates
     current::T
     stack_t_dc::Vector{TimedDC{T}}
 end
 
-function update(agent::DCSourceAgent{T, U}, current::T) where {T <: AbstractFloat, U <: Unsigned}
-    agent.current = current
+function update(agent::DCSourceAgent{T, U},
+                updates::DCSourceUpdates) where {T <: AbstractFloat, U <: Unsigned}
+    agent.current = updates.current
+    agent.stack_t_dc = updates.stack_t_dc
 end
 
 state_dict(agent::DCSourceAgent) = Dict(["current" => agent.current])
@@ -42,7 +44,7 @@ function act(address::Address{U},
     new_stack_t_dc, updates = take_due_signals(t + dt, agent.stack_t_dc)
     
     if length(updates) > 0 # update current by the latest TimedDC
-        signal_upd = reduce((acc, x) -> x.t > acc.t ? x : acc, update; init=update[1])
+        signal_upd = reduce((acc, x) -> x.t > acc.t ? x : acc, updates; init=updates[1])
         new_current = signal_upd.current
         tadc = TimedAdrsDC(signal_upd.t, signal_upd.current, address)
         for adrs in agent.acceptors_t_adrs_dc
@@ -56,7 +58,7 @@ function act(address::Address{U},
         push_task(address, next_t_dc.t - dt)
     end
 
-    update_agent(address, DCSourceUpdate(new_current, new_stack_t_dc))
+    update_agent(address, DCSourceUpdates(new_current, new_stack_t_dc))
 end
 
 function can_add_acceptor(agent::DCSourceAgent{T, U},

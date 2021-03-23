@@ -41,9 +41,9 @@ mutable struct LIFSimpleUpdates{T <: AbstractFloat} <: AgentUpdates
 end
 
 function update(agent::LIFSimpleAgent{T, U},
-                update::LIFSimpleUpdates{T}) where {T <: AbstractFloat, U <: Unsigned}
-    agent.states = update.states
-    agent.stack_t_delta_v = update.stack_t_delta_v
+                updates::LIFSimpleUpdates{T}) where {T <: AbstractFloat, U <: Unsigned}
+    agent.states = updates.states
+    agent.stack_t_delta_v = updates.stack_t_delta_v
     agent.ports_dc = updates.ports_dc
 end
 
