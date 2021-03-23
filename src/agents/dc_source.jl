@@ -1,4 +1,5 @@
 module DCSource
+export DCSourceAgent
 using ...Types
 using ...Network
 import ...Network: act, update, state_dict

@@ -8,9 +8,9 @@ import ...Network: act, update, state_dict
 using ...Signals
 import ...Signals: add_acceptor, add_donor, can_add_acceptor, can_add_donor, accept
 
-struct LIFSimpleParams
-    lif::LIFParams
-    delta_v::AbstractFloat
+struct LIFSimpleParams{T <: AbstractFloat}
+    lif::LIFParams{T}
+    delta_v::T
 end
 
 mutable struct LIFSimpleAgent{T <: AbstractFloat, U <: Unsigned} <: Agent
@@ -19,19 +19,25 @@ mutable struct LIFSimpleAgent{T <: AbstractFloat, U <: Unsigned} <: Agent
     acceptors_t_delta_v::Vector{Address{U}} # agents that accept from self.
     donors_t_delta_v::Vector{Address{U}} # agents that donate to self.
     stack_t_delta_v::Vector{TimedDeltaV{T}}
-    ports_dc::Vector{DCPort{T, U}}
+    ports_dc::Vector{DCPort{T}}
 end
 
-function LIFSimpleAgent(states::LIFStates{T},
-                        params::LIFSimpleParams{T}) where {T <: AbstractFloat, U <: Unsigned}
-    LIFSimpleAgent{T, U}(states, params, [], [], [], 0.0::T)
+function LIFSimpleAgent{T, U}(states::LIFStates{T},
+                              params::LIFSimpleParams{T}) where {T <: AbstractFloat, U <: Unsigned}
+    LIFSimpleAgent{T, U}(states, params, [], [], [], [])
+    # LIFSimpleAgent{T, U}(states,
+    #                      params,
+    #                      Vector{Address{U}}(undef, 0),
+    #                      Vector{Address{U}}(undef, 0),
+    #                      Vector{TimedDeltaV{T}}(undef, 0),
+    #                      [])
 end
 
 
 struct LIFSimpleUpdate{T <: AbstractFloat, U <: Unsigned} <: AgentUpdates
-    states::LIFStates
-    stack_t_delta_v::Vector{TimedDeltaV}
-    ports_dc::Vector{DCPort{T, U}}
+    states::LIFStates{T}
+    stack_t_delta_v::Vector{TimedDeltaV{T}}
+    ports_dc::Vector{DCPort{T}}
 end
 
 function update(agent::LIFSimpleAgent{T, U},
