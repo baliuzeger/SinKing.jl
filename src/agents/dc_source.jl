@@ -13,9 +13,10 @@ struct DCSourceAgent{T <: AbstractFloat, U <: Unsigned} <: Agent
 end
 
 function DCSourceAgent{T, U}(current::T) where {T <: AbstractFloat, U <: Unsigned}
-    DCSourceAgent{T, U}(current,
-                        Vector{Address{U}}(undef, 0),
-                        Vector{TimedDC{T}}(undef, 0))
+    DCSourceAgent{T, U}(current, [], [])
+    # DCSourceAgent{T, U}(current,
+    #                     Vector{Address{U}}(undef, 0),
+    #                     Vector{TimedDC{T}}(undef, 0))
 end
 
 struct DCSourceUpdate{T <: AbstractFloat} <: AgentUpdates

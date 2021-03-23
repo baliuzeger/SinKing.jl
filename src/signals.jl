@@ -3,7 +3,7 @@ module Signals
 using ..Network
 export take_due_signals, name_t_delta_v, connect, Signal,
     TimedDeltaV, TimedExctDeltaCond, TimedInhbtDeltaCond, TimedMarkram, TimedDC, name_t_dc,
-    add_acceptor, add_donor, can_add_acceptor, can_add_donor, accept, TimedAdrsDC
+    add_acceptor, add_donor, can_add_acceptor, can_add_donor, accept, TimedAdrsDC, name_t_adrs_dc
 
 abstract type Signal end
 abstract type TimedSignal <: Signal end
