@@ -139,6 +139,7 @@ function add_donor(agent::LIFSimpleAgent{T, U},
             push!(agent.ports_dc, DCPort(address, 0.0, []))
         else
             error("Got unhandled signal_name on add_donor.")
+        end
     else
         error("LIFSimpleAgent cannot add $signal_name for donor at $(address.population)-$(address.num)!")
     end

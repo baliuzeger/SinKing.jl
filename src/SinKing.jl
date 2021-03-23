@@ -9,6 +9,7 @@ include("./agent_parts/iz_neuron.jl")
 include("./agent_parts/conductance_injection.jl")
 include("./agent_parts/markram_transmitter.jl")
 include("./agent_parts/lif_neuron.jl")
+include("./agent_parts/dc.jl")
 end
 
 module Agents
