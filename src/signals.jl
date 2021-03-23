@@ -5,11 +5,10 @@ export take_due_signals, name_t_delta_v, connect, Signal,
     TimedDeltaV, TimedExctDeltaCond, TimedInhbtDeltaCond, TimedMarkram, TimedDC, name_t_dc,
     add_acceptor, add_donor, can_add_acceptor, can_add_donor, accept, TimedAdrsDC, name_t_adrs_dc
 
-abstract type Signal end
 abstract type TimedSignal <: Signal end
 
 function take_due_signals(t::T, signals::Vector{U}) where {T <: AbstractFloat, U <: TimedSignal}
-    keep, take = [], []
+    keep, take = Vector{U}(undef, 0), Vector{U}(undef, 0)
     for x in signals
         if x.t <= t
             push!(take, x)

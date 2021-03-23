@@ -34,14 +34,14 @@ function LIFSimpleAgent{T, U}(states::LIFStates{T},
 end
 
 
-struct LIFSimpleUpdate{T <: AbstractFloat, U <: Unsigned} <: AgentUpdates
+mutable struct LIFSimpleUpdates{T <: AbstractFloat} <: AgentUpdates
     states::LIFStates{T}
     stack_t_delta_v::Vector{TimedDeltaV{T}}
     ports_dc::Vector{DCPort{T}}
 end
 
 function update(agent::LIFSimpleAgent{T, U},
-                update::LIFSimpleUpdate{T, U}) where {T <: AbstractFloat, U <: Unsigned}
+                update::LIFSimpleUpdates{T}) where {T <: AbstractFloat, U <: Unsigned}
     agent.states = update.states
     agent.stack_t_delta_v = update.stack_t_delta_v
     agent.ports_dc = updates.ports_dc
@@ -55,12 +55,12 @@ function act(address::Address,
              update_agent,
              push_signal) where{T <: AbstractFloat, U <: Unsigned}
 
-    updates = LIFSimpleUpdate(agent.states, agent.stack_t_delta_v, agent.ports_dc, agent.sum_current)
+    updates = LIFSimpleUpdates(agent.states, agent.stack_t_delta_v, agent.ports_dc)
     fired = false
     next_t = nothing
     
     function inject_fn()
-        i_syn, updates.ports_dc = gen_dc_updates(agent.ports_dc)
+        i_syn, updates.ports_dc = gen_dc_updates(t, dt, agent.ports_dc)
         
         updates.stack_t_delta_v, tdv_signals = take_due_signals(t, agent.stack_t_delta_v)
         if ! isnothing(agent.states.refractory_end) # at end of refractory

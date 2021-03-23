@@ -1,11 +1,11 @@
 module Network
 export Address, Point3D, Seat, Population, simulate, push_seat, get_agent, Agent, AgentUpdates,
-    gen_all_q
+    gen_all_q, Signal
 using DataFrames
-using ..Signals
 
 abstract type Agent end
 abstract type AgentUpdates end
+abstract type Signal end
 
 struct Address{T <: Unsigned}
     population::String

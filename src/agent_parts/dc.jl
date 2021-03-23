@@ -9,9 +9,9 @@ struct DCPort{T <: AbstractFloat}
     stack::Vector{TimedDC{T}}
 end
 
-function gen_dc_updates(ports::Vector{DCPort{T}}) where{T <: AbstractFloat}
-    reduce(ports; init=(zero(T), Vector{DCPort{T, U}}(undef, 0))) do acc, port
-        keep, take = take_due_signals(port.stack)
+function gen_dc_updates(t::T, dt::T, ports::Vector{DCPort{T}}) where{T <: AbstractFloat}
+    reduce(ports; init=(zero(T), Vector{DCPort{T}}(undef, 0))) do acc, port
+        keep, take = take_due_signals(t, port.stack)
         last_t_dc = reduce((acc2, x2) -> acc2.t < x2.t ? x2 : acc2,
                            take;
                            init=TimedDC(t - dt, port.current))
