@@ -142,7 +142,7 @@ function add_donor(agent::LIFSimpleAgent{T, U},
         if signal_name == name_t_delta_v
             push!(agent.donors_t_delta_v, address)
         elseif signal_name == name_t_adrs_dc
-            push!(agent.ports_dc, DCPort(address, 0.0, []))
+            push!(agent.ports_dc, DCPort(address, zero(T), Vector{TimedDC{T}}(undef, 0)))
         else
             error("Got unhandled signal_name on add_donor.")
         end
