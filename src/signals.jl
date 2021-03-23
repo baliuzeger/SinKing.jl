@@ -3,7 +3,7 @@ module Signals
 using ..Network
 export take_due_signals, name_t_delta_v, connect, Signal,
     TimedDeltaV, TimedExctDeltaCond, TimedInhbtDeltaCond, TimedMarkram, TimedDC, name_t_dc,
-    add_acceptor, add_donor, can_add_acceptor, can_add_donor, accept, TimedAdrsDC, name_t_adrs_dc
+    add_acceptor, add_donor, can_add_acceptor, can_add_donor, TimedAdrsDC, name_t_adrs_dc
 
 abstract type TimedSignal <: Signal end
 
@@ -62,7 +62,6 @@ function can_add_acceptor end # (agent, signal_name) -> bool
 function can_add_donor end
 function add_acceptor end # (agent, signal_name, acptr_address) -> ()
 function add_donor end # (agent, signal_name, dnr_address) -> ()
-function accept end # (agent, signal) -> ()
 
 function connect(network::Dict{String, Population{U, T}},
                  signal_name::String,
@@ -72,7 +71,7 @@ function connect(network::Dict{String, Population{U, T}},
     acptr = get_agent(network, acceptor_address)
     if can_add_acceptor(dnr, signal_name) && can_add_donor(acptr, signal_name)
         add_acceptor(dnr, signal_name, acceptor_address)
-        add_donor(acptr, signal_name, acceptor_address)
+        add_donor(acptr, signal_name, donor_address)
     else
         error(
             "connect failed. Donor: $donor_address; acceptor: $acceptor_address; signal_name: $signal_name"

@@ -4,7 +4,7 @@ using ...Types
 using ...AgentParts.LIFNeuron
 using ...AgentParts.DC
 using ...Network
-import ...Network: act, update, state_dict
+import ...Network: act, update, state_dict, accept
 using ...Signals
 import ...Signals: add_acceptor, add_donor, can_add_acceptor, can_add_donor, accept
 
@@ -118,7 +118,8 @@ function accept(agent::LIFSimpleAgent{T, U},
                 signal::TimedAdrsDC{T, U}) where{T <: AbstractFloat, U <: Unsigned}
     found_port = false
     for port in agent.ports_dc
-        if port.address == signal.address
+        println("LIFSimpleAgent accept TimedAdrsDC, $(port.address) vs $(signal.source)")
+        if port.address == signal.source
             push!(port.stack, TimedDC(signal.t, signal.current))
             println("LifSimple accept TimedAdrsDC!")
             found_port = true
@@ -126,7 +127,7 @@ function accept(agent::LIFSimpleAgent{T, U},
     end
     if ! found_port
         error(
-            "LIFSimpleAgent accept $(name_t_adrs_dc) from unregistered donor $(signal.adress.population)-$(signal.adress.num)!"
+            "LIFSimpleAgent accept $(name_t_adrs_dc) from unregistered donor $(signal.source.population)-$(signal.source.num)!"
         )
     end
 end

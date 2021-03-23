@@ -104,7 +104,7 @@ function simulate(start_t::T,
         end
 
         function push_signal(address, signal)
-            println("Simultae push_signal!")
+            #println("Simultae push_signal!")
             if haskey(accepted_signals, address)
                 push!(accepted_signals[address], signal)
             else

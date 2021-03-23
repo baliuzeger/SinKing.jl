@@ -2,7 +2,7 @@ module DCSource
 export DCSourceAgent
 using ...Types
 using ...Network
-import ...Network: act, update, state_dict
+import ...Network: act, update, state_dict, accept
 using ...Signals
 import ...Signals: add_acceptor, add_donor, can_add_acceptor, can_add_donor, accept
 
@@ -44,15 +44,15 @@ function act(address::Address{U},
     new_stack_t_dc, due_stack = take_due_signals(t + dt, agent.stack_t_dc)
     
     if length(due_stack) > 0 # update current by the latest TimedDC
-        println("t = $(t)")
-        println("DCSourceAgent due_stack > 0!")
-        println(agent.acceptors_t_adrs_dc)
+        # println("t = $(t)")
+        # println("DCSourceAgent due_stack > 0!")
+        # println(agent.acceptors_t_adrs_dc)
         signal_upd = reduce((acc, x) -> x.t > acc.t ? x : acc, due_stack; init=due_stack[1])
         new_current = signal_upd.current
         tadc = TimedAdrsDC(signal_upd.t, signal_upd.current, address)
-        println(tadc)
+        #println(tadc)
         for adrs in agent.acceptors_t_adrs_dc
-            println("donate to $(adrs)")
+            #println("donate to $(adrs)")
             push_task(adrs, signal_upd.t)
             push_signal(adrs, tadc)
         end
