@@ -1,5 +1,6 @@
 module Network
-export Address, Point3D, Seat, Population, simulate, push_seat, get_agent, Agent, AgentUpdates
+export Address, Point3D, Seat, Population, simulate, push_seat, get_agent, Agent, AgentUpdates,
+    gen_all_q
 using DataFrames
 
 abstract type Agent end
@@ -45,6 +46,15 @@ end
 function act end
 function update end # (address, AgentUpdates) -> ()
 function state_dict end # () -> Dict
+
+function gen_all_q(nw::network::Dict{String, Population{T, V}}, t) where{T <: Unsigned, V <: AbstractFloat}
+    reduce((q, pair) -> merge(q,
+                              reduce((q2, pair2) -> merge(q2, Dict([Address(pair[1], pair2[1]) => t])),
+                                     pair[2].agents;
+                                     init=Dict([])::Dict{Address{T}, V})),
+           nw;
+           init=Dict([])::Dict{Address{T}, V})
+end
 
 function simulate(start_t::T,
                   end_t::T,
