@@ -42,9 +42,10 @@ function act(address::Address{U},
     if length(updates) > 0 # update current by the latest TimedDC
         signal_upd = reduce((acc, x) -> x.t > acc.t ? x : acc, update; init=update[1])
         new_current = signal_upd.current
+        tadc = TimedAdrsDC(signal_upd.t, signal_upd.current, address)
         for adrs in agent.acceptors_dc
             push_task(adrs, signal_upd.t)
-            push_signal(adrs, signal)
+            push_signal(adrs, tadc)
         end
     end
 

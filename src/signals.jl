@@ -57,7 +57,7 @@ struct TimedAdrsDC{T <: AbstractFloat, U <: Unsigned} <: TimedSignal
     t::T # start time of the current
     current::T
     source::Address{U}
-end 
+end
 
 function can_add_acceptor end # (agent, signal_name) -> bool
 function can_add_donor end
