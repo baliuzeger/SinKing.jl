@@ -7,7 +7,7 @@ import ...Signals: add_acceptor, add_donor, can_add_acceptor, can_add_donor, acc
 
 struct DCSourceAgent{T <: AbstractFloat, U <: Unsigned} <: Agent
     current::T
-    acceptors_dc::Vector{Address{U}}
+    acceptors_t_adrs_dc::Vector{Address{U}}
     stack_t_dc::Vector{TimedDC{T}}
 end
 
@@ -43,7 +43,7 @@ function act(address::Address{U},
         signal_upd = reduce((acc, x) -> x.t > acc.t ? x : acc, update; init=update[1])
         new_current = signal_upd.current
         tadc = TimedAdrsDC(signal_upd.t, signal_upd.current, address)
-        for adrs in agent.acceptors_dc
+        for adrs in agent.acceptors_t_adrs_dc
             push_task(adrs, signal_upd.t)
             push_signal(adrs, tadc)
         end
@@ -59,14 +59,14 @@ end
 
 function can_add_acceptor(agent::DCSourceAgent{T, U},
                           signal_name::String) where {T <: AbstractFloat, U <: Unsigned}
-    signal_name == name_t_dc ? true : false
+    signal_name == name_t_adrs_dc ? true : false
 end
 
 function add_acceptor(agent::DCSourceAgent{T, U},
                       signal_name::String,
                       address::Address{U}) where{T <: AbstractFloat, U <: Unsigned}
     if can_add_acceptor(agent, signal_name)
-        push!(agent.acceptors_dc)
+        push!(agent.acceptors_t_adrs_dc)
     else
         error("DCSourceAgent cannot add $signal_name acceptors!")
     end
