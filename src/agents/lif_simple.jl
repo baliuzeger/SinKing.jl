@@ -60,7 +60,7 @@ function act(address::Address,
     next_t = nothing
     
     function inject_fn()
-        println("LIFSimple ports_dc: $(agent.ports_dc). t = $(t).")
+        #println("LIFSimple ports_dc: $(agent.ports_dc). t = $(t).")
         i_syn, updates.ports_dc = gen_dc_updates(t, dt, agent.ports_dc)
         
         updates.stack_t_delta_v, tdv_signals = take_due_signals(t, agent.stack_t_delta_v)
@@ -70,7 +70,7 @@ function act(address::Address,
         delta_v = reduce((acc, x) -> acc + x.delta_v, tdv_signals; init=0.0)
 
         next_t = abs(i_syn) > 0 ? t + dt : next_t # the fns that modify next_t may conflict.
-        println("i_syn: $(i_syn).")
+        #println("i_syn: $(i_syn).")
         (i_syn, delta_v) # (i_syn, delta_v)
     end
 
