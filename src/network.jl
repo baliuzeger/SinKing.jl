@@ -131,7 +131,7 @@ function simulate(start_t::T,
             update(get_agent(network, adrs), updates)
         end
         for (adrs, signals) in accepted_signals
-            println("$(adrs) accept $(signals)")
+            #println("$(adrs) accept $(signals)")
             foreach(s -> accept(get_agent(network, adrs), s), signals)
         end
         t += dt
