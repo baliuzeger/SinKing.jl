@@ -6,12 +6,13 @@ export take_due_signals, name_t_delta_v, connect, Signal,
     add_acceptor, add_donor, can_add_acceptor, can_add_donor, TimedAdrsDC, name_t_adrs_dc
 
 abstract type TimedSignal <: Signal end
+function after_t end
 
-function take_due_signals(t::T, signals::Vector{U}) where {T <: AbstractFloat, U <: TimedSignal}
+function take_due_signals(dt::T, signals::Vector{U}) where {T <: AbstractFloat, U <: TimedSignal}
     keep, take = Vector{U}(undef, 0), Vector{U}(undef, 0)
     for x in signals
-        if x.t <= t
-            push!(take, x)
+        if x.t <= zero(T)
+            push!(take, after_t(dt, x))
         else
             push!(keep, x)
         end
@@ -23,6 +24,8 @@ struct TimedMarkram{T <: AbstractFloat} <: TimedSignal
     t::T
     delta::T
 end
+
+after_t(dt::T, s::TimedMarkram{T}) where {T <: AbstractFloat} = TimedMarkram(s.t - dt, s.delta)
 
 struct TimedExctDeltaCond{T <: AbstractFloat} <: TimedSignal
     t::T
@@ -45,11 +48,15 @@ struct TimedDeltaV{T <: AbstractFloat} <: TimedSignal
     delta_v::T
 end
 
+after_t(dt::T, s::TimedDeltaV{T}) where {T <: AbstractFloat} = (s.t - dt, s.delta_v)
+
 const name_t_dc = "TimedDC"
 struct TimedDC{T <: AbstractFloat} <: TimedSignal
     t::T # start time of the current
     current::T
 end
+
+after_t(dt::T, s::TimedDC{T}) where {T <: AbstractFloat} = (s.t - dt, s.current)
 
 const name_t_adrs_dc = "TimedAdrsDC"
 struct TimedAdrsDC{T <: AbstractFloat, U <: Unsigned} <: TimedSignal
@@ -57,6 +64,8 @@ struct TimedAdrsDC{T <: AbstractFloat, U <: Unsigned} <: TimedSignal
     current::T
     source::Address{U}
 end
+
+after_t(dt::T, s::TimedAdrsDC{T}) where {T <: AbstractFloat} = (s.t - dt, s.current, s.source)
 
 function can_add_acceptor end # (agent, signal_name) -> bool
 function can_add_donor end

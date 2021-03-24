@@ -85,7 +85,7 @@ function simulate(start_t::T,
     t = start_t
     index = 1
     while index <= total_steps
-        t_str = @sprintf("%.1f", t) # for print time.
+        t_str = @printf("t: %.1f.", t) # print time.
         
         agent_updates::Dict{Address, AgentUpdates} = Dict([])
         accepted_signals::Dict{Address, Vector{Signal}} = Dict([])
@@ -116,7 +116,7 @@ function simulate(start_t::T,
         end
         
         for (adrs, work_t) in current_q
-            if work_t <= t
+            if work_t <= zero(T)
                 act(adrs,
                     get_agent(network ,adrs),
                     t,
@@ -125,7 +125,7 @@ function simulate(start_t::T,
                     update_agent, # (address, update)
                     push_signal) # (adrs, signal)
             else
-                next_q[adrs] = work_t
+                next_q[adrs] = work_t - dt
             end
         end
 

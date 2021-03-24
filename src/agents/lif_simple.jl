@@ -50,7 +50,6 @@ end
 
 function act(address::Address,
              agent::LIFSimpleAgent{T, U},
-             t::T,
              dt::T,
              push_task,
              update_agent,
