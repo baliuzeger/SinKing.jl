@@ -58,10 +58,20 @@ function act(address::Address,
     updates = LIFSimpleUpdates(agent.states, agent.stack_t_delta_v, agent.ports_dc)
     fired = false
     next_t = nothing
+
+    function lif_push_task(t)
+        if isnothing(next_t)
+            next_t = t
+        else
+            next_t = next_t < t ? next_t : t
+        end
+    end
     
     function inject_fn()
-        #println("LIFSimple ports_dc: $(agent.ports_dc). t = $(t).")
         i_syn, updates.ports_dc = gen_dc_updates(t, dt, agent.ports_dc)
+        if abs(i_syn) > 0
+            lif_push_task(t + dt)
+        end
         
         updates.stack_t_delta_v, tdv_signals = take_due_signals(t, agent.stack_t_delta_v)
         if ! isnothing(agent.states.refractory_end) # at end of refractory
@@ -69,8 +79,6 @@ function act(address::Address,
         end
         delta_v = reduce((acc, x) -> acc + x.delta_v, tdv_signals; init=0.0)
 
-        next_t = abs(i_syn) > 0 ? t + dt : next_t # the fns that modify next_t may conflict.
-        #println("i_syn: $(i_syn).")
         (i_syn, delta_v) # (i_syn, delta_v)
     end
 
@@ -82,13 +90,6 @@ function act(address::Address,
         fired = true
     end
 
-    function lif_push_task(t)
-        if isnothing(next_t)
-            next_t = t
-        else
-            next_t = next_t < t ? next_t : t
-        end
-    end
     
     evolve(t,
            dt,
