@@ -1,5 +1,6 @@
 module LIFSimple
 export LIFSimpleAgent, accept, LIFSimpleParams
+using Printf
 using ...Types
 using ...AgentParts.LIFNeuron
 using ...AgentParts.DC
@@ -69,9 +70,6 @@ function act(address::Address,
     
     function inject_fn()
         i_syn, updates.ports_dc = gen_dc_updates(t, dt, agent.ports_dc)
-        if abs(i_syn) > 0
-            lif_push_task(t + dt)
-        end
         
         updates.stack_t_delta_v, tdv_signals = take_due_signals(t, agent.stack_t_delta_v)
         if ! isnothing(agent.states.refractory_end) # at end of refractory
@@ -101,6 +99,8 @@ function act(address::Address,
            lif_push_task)
 
     update_agent(address, updates)
+    # t_str = @sprintf("%.1f", t)
+    # println("LIFSimple. t: $(t_str), updates.states: $(updates.states).")
 
     if ! isnothing(next_t)
         push_task(address, next_t)

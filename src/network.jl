@@ -1,4 +1,5 @@
 module Network
+using Printf
 export Address, Point3D, Seat, Population, simulate, push_seat, get_agent, Agent, AgentUpdates,
     gen_all_q, Signal, accept
 using DataFrames
@@ -84,9 +85,11 @@ function simulate(start_t::T,
     t = start_t
     index = 1
     while index <= total_steps
+        t_str = @sprintf("%.1f", t) # for print time.
+        
         agent_updates::Dict{Address, AgentUpdates} = Dict([])
         accepted_signals::Dict{Address, Vector{Signal}} = Dict([])
-        next_q = Dict([])
+        next_q = Dict{Address{U}, T}([])
 
         # store record here
         for adrs in recording_agents
@@ -127,6 +130,9 @@ function simulate(start_t::T,
         end
 
         current_q = next_q
+            println(
+                "Network simulate ending. t: $(t_str), current_q: $(current_q)."
+            )
         for (adrs, updates) in agent_updates
             update(get_agent(network, adrs), updates)
         end
