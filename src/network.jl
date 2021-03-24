@@ -119,7 +119,6 @@ function simulate(start_t::T,
             if work_t <= zero(T)
                 act(adrs,
                     get_agent(network ,adrs),
-                    t,
                     dt,
                     push_task, # (adress, next_t)
                     update_agent, # (address, update)
