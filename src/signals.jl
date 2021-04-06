@@ -11,10 +11,10 @@ function after_t end
 function take_due_signals(dt::T, signals::Vector{U}) where {T <: AbstractFloat, U <: TimedSignal}
     keep, take = Vector{U}(undef, 0), Vector{U}(undef, 0)
     for x in signals
-        if x.t <= zero(T)
-            push!(take, after_t(dt, x))
+        if x.t <= dt
+            push!(take, x)
         else
-            push!(keep, x)
+            push!(keep, after_t(dt, x))
         end
     end
     return keep, take

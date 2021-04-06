@@ -34,14 +34,13 @@ state_dict(agent::DCSourceAgent) = Dict(["current" => agent.current])
 
 function act(address::Address{U},
              agent::DCSourceAgent{T, U},
-             t::T,
              dt::T,
              push_task,
              update_agent,
              push_signal) where {T <: AbstractFloat, U <: Unsigned}
 
     new_current = agent.current
-    new_stack_t_dc, due_stack = take_due_signals(t + dt, agent.stack_t_dc)
+    new_stack_t_dc, due_stack = take_due_signals(dt, agent.stack_t_dc)
     
     if length(due_stack) > 0 # update current by the latest TimedDC
         # println("t = $(t)")

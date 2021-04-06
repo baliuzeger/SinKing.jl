@@ -172,7 +172,7 @@ end
 
 function state_dict(agent::LIFSimpleAgent{T, U}) where{T <: AbstractFloat, U <: Unsigned}
     Dict(["v" => agent.states.v,
-          "refractory" => isnothing(agent.states.refractory_end) ? 0 : 1])
+          "t_refractory" => agent.states.t_refractory])
 end
 
 end # module end
