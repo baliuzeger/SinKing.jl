@@ -5,8 +5,8 @@ using ...Signals
 
 struct DCPort{T <: AbstractFloat}
     address::Address
-    current::T
-    stack::Vector{TimedDC{T}}
+    current::T # value of the current from the port now.
+    stack::Vector{TimedDC{T}} # accepted instructions of pairs of start-time and current.
 end
 
 function gen_dc_updates(t::T, dt::T, ports::Vector{DCPort{T}}) where{T <: AbstractFloat}
