@@ -10,10 +10,12 @@ function update(agent::DelayerAgent{T}, updates::Vector{(T, Signal)}) where {T <
     agent.stack = updates
 end
 
-function state_dict(agent::DelayerAgent{T}) where {T <: AbstractFloat, U <: Signal}
-    Dict
-end
-state_dict(agent::DelayerAgent) =
+## state_dict is for recording states, not for network-serialization. temporarily commented.
+# function state_dict(agent::DelayerAgent{T}) where {T <: AbstractFloat, U <: Signal}
+#     Dict(["stack" => map(state_dict, agent.stack)])
+# end
+
+
 
     
 

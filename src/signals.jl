@@ -30,6 +30,9 @@ end
 
 amplify(s::DeltaV{T}, w::T) where {T <: AbstractFloat} = DeltaV(s.delta_v * w)
 
+## state_dict is for recording states, not for network-serialization. temporarily commented.
+#state_dict(s::DeltaV{T}) where {T <: AbstractFloat} = Dict(["delta_v" => s.delta_v])
+
 const name_dc_instruction = "DCInstruction"
 struct DCInstruction{T <: AbstractFloat} <: Signal
     previous::T
@@ -37,6 +40,9 @@ struct DCInstruction{T <: AbstractFloat} <: Signal
 end
 
 amplify(s::DCInstruction{T}, w::T) where {T <: AbstractFloat} = DCInstruction(s.previous * w, s.new * w)
+
+## state_dict is for recording states, not for network-serialization. temporarily commented.
+#state_dict(s::DCInstruction{T}) where {T <: AbstractFloat} = Dict(["precious" => s.previous, "new" => s.new])
 
 function can_add_acceptor end # (agent, signal_name) -> bool
 function can_add_donor end
