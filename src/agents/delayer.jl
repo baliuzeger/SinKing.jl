@@ -1,8 +1,10 @@
 using ...Network
 import ...Network: act, update, state_dict, accept
+using ...Signals
 
 struct DelayerAgent{T <: AbstractFloat, U::Unsigned, V <: Signal}
     delay::T # delay time
+    w::AbstractFloat
     stack::Vector{(T, U)}
     donor::Address{U}
     acceptor::Address{U}
@@ -30,7 +32,7 @@ function act(address::Address{U},
         if new_t >= 0
             ([acc[1]..., (new_t, pair[2])], acc[2])
         else
-            (acc[1], [acc[2]..., pair[2]])
+            (acc[1], [acc[2]..., amplify(pair[2], agent.w)])
         end
     end
 
@@ -42,7 +44,7 @@ function act(address::Address{U},
     
 end
 
-
+accept
     
 
 
