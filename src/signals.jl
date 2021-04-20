@@ -5,32 +5,38 @@ export take_due_signals, name_t_delta_v, connect, Signal,
     TimedDeltaV, TimedExctDeltaCond, TimedInhbtDeltaCond, TimedMarkram, TimedDC, name_t_dc,
     add_acceptor, add_donor, can_add_acceptor, can_add_donor, TimedAdrsDC, name_t_adrs_dc
 
-struct MarkramDelta{T <: AbstractFloat} <: Signal
-    delta::T
-end
+function amplify end
 
-struct ExctDeltaCond{T <: AbstractFloat} <: Signal
-    delta_cond::T
-end
+# struct MarkramDelta{T <: AbstractFloat} <: Signal
+#     delta::T
+# end
 
-struct InhbtDeltaCond{T <: AbstractFloat} <: Signal
-    delta_cond::T
-end
+# struct ExctDeltaCond{T <: AbstractFloat} <: Signal
+#     delta_cond::T
+# end
 
-struct DeltaCond{T <: AbstractFloat} <: Signal
-    delta_cond::T
-end
+# struct InhbtDeltaCond{T <: AbstractFloat} <: Signal
+#     delta_cond::T
+# end
+
+# struct DeltaCond{T <: AbstractFloat} <: Signal
+#     delta_cond::T
+# end
 
 const name_delta_v = "DeltaV"
 struct DeltaV{T <: AbstractFloat} <: Signal
     delta_v::T
 end
 
+amplify(s::DeltaV{T}, w::T) where {T <: AbstractFloat} = DeltaV(s.delta_v * w)
+
 const name_dc_instruction = "DCInstruction"
 struct DCInstruction{T <: AbstractFloat} <: Signal
     previous::T
     new::T
 end
+
+amplify(s::DCInstruction{T}, w::T) where {T <: AbstractFloat} = DCInstruction(s.previous * w, s.new * w)
 
 function can_add_acceptor end # (agent, signal_name) -> bool
 function can_add_donor end
