@@ -62,14 +62,13 @@ function gen_all_q(nw::Dict{String, Population{T, V}}, t::V) where{T <: Unsigned
            init=Dict{Address{T}, V}([]))
 end
 
-function simulate(start_t::T,
-                  end_t::T,
+function simulate(total_t::T,
                   dt::T,
                   network::Dict{String, Population{U, T}},
                   current_q::Dict{Address{U}, T},
                   recording_agents::Vector{Address{U}}) where {T <: AbstractFloat, U <: Unsigned}
 
-    total_steps = Int((end_t - start_t) ÷ dt + 1)
+    total_steps = Int(total_t ÷ dt + 1)
     col_name = (adrs::Address, state_name::String) -> "$(adrs.population)_$(adrs.num)_$(state_name)"
     col_names = reduce((acc, adrs) -> [acc;
                                        reduce((acc, x) -> [acc; [col_name(adrs, x[1])]],
@@ -79,17 +78,16 @@ function simulate(start_t::T,
                        init = [])
     df = DataFrame()
     for name in col_names
-        df[!, name] = repeat([0.0::T], total_steps)
+        df[!, name] = repeat([zero(T)], total_steps)
     end
     
-    t = start_t
+    t = zero(T)
     index = 1
     while index <= total_steps
         t_str = @printf("t: %.1f.", t) # print time.
-        
-        agent_updates::Dict{Address, AgentUpdates} = Dict([])
-        accepted_signals::Dict{Address, Vector{Signal}} = Dict([])
-        next_q = Dict{Address{U}, T}([])
+
+        processes = Dict{Address{U}, Task}([])
+        next_q = Set{Address{U}}([])
 
         # store record here
         for adrs in recording_agents
@@ -97,22 +95,25 @@ function simulate(start_t::T,
                 df[index, col_name(adrs, k)] = v
             end
         end
-        
-        function push_task(address, next_t)
-            next_q[address] = next_t
+
+        function push_task(address::Address)
+            push!(next_q, address)
         end
 
-        function update_agent(address, updates)
-            agent_updates[address] = updates
-        end
-
-        function push_signal(address, signal)
-            #println("Simultae push_signal!")
-            if haskey(accepted_signals, address)
-                push!(accepted_signals[address], signal)
-            else
-                accepted_signals[address] = [signal]
+        function run_process(address::Address{U}, fn)
+            if haskey(processes, address) && ! istaskdone(processes[address])
+                wait(processes[address])
             end
+            processes[address] = @task fn()
+            schedule(processes[address])
+        end
+        
+        function update_agent(address::Address, updates::AgentUpdates)
+            run_process(address, () -> update(get_agent(network, adrs), updates))
+        end
+
+        function accept_signal(address::Address, signal::Signal)
+            run_process(address, () -> accept(get_agent(network, adrs), signal))
         end
         
         for (adrs, work_t) in current_q
@@ -132,13 +133,7 @@ function simulate(start_t::T,
             println(
                 "Network simulate ending. t: $(t_str), current_q: $(current_q)."
             )
-        for (adrs, updates) in agent_updates
-            update(get_agent(network, adrs), updates)
-        end
-        for (adrs, signals) in accepted_signals
-            #println("$(adrs) accept $(signals)")
-            foreach(s -> accept(get_agent(network, adrs), s), signals)
-        end
+
         t += dt
         index += 1
     end
