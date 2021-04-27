@@ -48,24 +48,24 @@ function update(agent::LIFSimpleAgent{T, U},
     agent.ports_dc = updates.ports_dc
 end
 
-function act(address::Address,
+function act(address::Address, # self address.
              agent::LIFSimpleAgent{T, U},
              dt::T,
-             push_task,
+             trigger, # (address) -> trigger for next step
              update_agent,
              push_signal) where{T <: AbstractFloat, U <: Unsigned}
 
-    updates = LIFSimpleUpdates(agent.states, agent.stack_t_delta_v, agent.ports_dc)
-    fired = false
-    next_t = nothing
+    # updates = LIFSimpleUpdates(agent.states, agent.stack_t_delta_v, agent.ports_dc)
+    # fired = false
+    # next_t = nothing
 
-    function lif_push_task(t)
-        if isnothing(next_t)
-            next_t = t
-        else
-            next_t = next_t < t ? next_t : t
-        end
-    end
+    # function lif_push_task(t)
+    #     if isnothing(next_t)
+    #         next_t = t
+    #     else
+    #         next_t = next_t < t ? next_t : t
+    #     end
+    # end
     
     function inject_fn()
         i_syn, updates.ports_dc = gen_dc_updates(dt, agent.ports_dc)
@@ -79,37 +79,40 @@ function act(address::Address,
         (i_syn, delta_v) # (i_syn, delta_v)
     end
 
-    function lif_update(states::LIFStates)
-        updates.states = states
-    end
+    # function lif_update(states::LIFStates)
+    #     updates.states = states
+    # end
 
     function fire_fn()
-        fired = true
+        signal = TimedDeltaV(zero(T), agent.params.delta_v)
+        for adrs in agent.acceptors_t_delta_v
+            trigger(adrs)
+            push_signal(adrs, signal)
+        end
     end
-
     
     evolve(dt,
            agent.states,
            agent.params.lif,
            inject_fn,
-           lif_update,
+           (updates::LIFSimpleUpdates) -> update(agent, updates),
            fire_fn,
-           lif_push_task)
+           () -> trigger(address))
 
-    update_agent(address, updates)
+    # update_agent(address, updates)
     # t_str = @sprintf("%.1f", t)
     # println("LIFSimple. t: $(t_str), updates.states: $(updates.states).")
 
-    if ! isnothing(next_t)
-        push_task(address, next_t)
-    end
-    if fired
-        signal = TimedDeltaV(zero(T), agent.params.delta_v)
-        for adrs in agent.acceptors_t_delta_v
-            push_task(adrs, dt)
-            push_signal(adrs, signal)
-        end
-    end
+    # if ! isnothing(next_t)
+    #     push_task(address, next_t)
+    # end
+    # if fired
+    #     signal = TimedDeltaV(zero(T), agent.params.delta_v)
+    #     for adrs in agent.acceptors_t_delta_v
+    #         trigger(adrs)
+    #         push_signal(adrs, signal)
+    #     end
+    # end
 end
 
 function accept(agent::LIFSimpleAgent{T, U}, signal::TimedDeltaV{T}) where{T <: AbstractFloat, U <: Unsigned}

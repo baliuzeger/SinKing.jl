@@ -40,7 +40,7 @@ function evolve(dt::T,
                 inject_fn, # trigger handling accepted signals & return injections
                 update, # udpate LIF states
                 fire_fn, # trigger actions of fire.
-                push_task) where {T <: AbstractFloat} # push self's next task by next_t
+                trigger_self) where {T <: AbstractFloat} # trigger self for next step.
 
     if states.tau_refractory <= zero(T)
         i_syn, delta_v = inject_fn()
@@ -48,16 +48,16 @@ function evolve(dt::T,
         if new_v >= 30.0
             fire_fn()
             update(LIFStates(params.v_reset, params.tau_refractory))
-            push_task()
+            trigger_self()
         else
             update(LIFStates(new_v, zero(T)))
             if i_syn !== zero(T) || abs(new_v - params.v_steady) > params.lazy_threshold
-                push_task()
+                trigger_self()
             end
         end
     else
         update(LIFStates(states.v, states.tau_refractory - dt))
-        push_task()
+        trigger_self()
     end
 end
 

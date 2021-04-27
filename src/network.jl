@@ -108,9 +108,9 @@ function simulate(total_t::T,
             schedule(processes[address])
         end
         
-        function update_agent(address::Address, updates::AgentUpdates)
-            run_process(address, () -> update(get_agent(network, adrs), updates))
-        end
+        # function update_agent(address::Address, updates::AgentUpdates)
+        #     @async run_process(address, () -> update(get_agent(network, adrs), updates))
+        # end
 
         function accept_signal(address::Address, signal::Signal)
             @async run_process(address, () -> accept(get_agent(network, adrs), signal))
