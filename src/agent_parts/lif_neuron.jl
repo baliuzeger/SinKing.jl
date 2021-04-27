@@ -10,12 +10,12 @@ mutable struct LIFStates{T <: AbstractFloat}
     v_equilibrium::T
 end
 
-function v_eqlbrm(dc::T, tau_refractory::T, v_steady::T) where {T <: AbstractFloat}
+function gen_v_eqlbrm(dc::T, tau_refractory::T, v_steady::T) where {T <: AbstractFloat}
     dc * tau_refractory + v_steady
 end
 
 function LIFStates{T}(v::T, tau_refractory::T, dc::T, v_steady::T) where {T <: AbstractFloat}
-    LIFStates(v, tau_refractory, dc, v_eqlbrm(dc, tau_refractory, v_steady))
+    LIFStates(v, tau_refractory, dc, gen_v_eqlbrm(dc, tau_refractory, v_steady))
 end
 
 struct LIFParams{T <: AbstractFloat}
@@ -27,31 +27,30 @@ struct LIFParams{T <: AbstractFloat}
 end
 
 function udpate_dc(states::LIFStates{T},
-                   tau_refractory::T,
-                   v_steady::T,
+                   params::LIFParams{T}
                    instruction::DCInstruction{T}) where {T <: AbstractFloat}
     states.dc = states.dc - instruction.previous + instruction.new
-    states.v_equilibrium = v_eqlbrm(states.dc, tau_refractory, v_steady)
+    states.v_equilibrium = gen_v_eqlbrm(states.dc, params.tau_refractory, params.v_steady)
 end
 
 function evolve(dt::T,
                 states::LIFStates,
                 params::LIFParams,
-                inject_fn, # trigger handling accepted signals & return injections
+                get_delta_v, # () -> delta_v then reset sum_delta_v
                 update, # udpate LIF states
                 fire_fn, # trigger actions of fire.
                 trigger_self) where {T <: AbstractFloat} # trigger self for next step.
 
     if states.tau_refractory <= zero(T)
-        i_syn, delta_v = inject_fn()
-        new_v = states.v + dt * (i_syn + (params.v_steady - states.v) / params.tau_leak) + delta_v
+        delta_v = get_delta_v()
+        new_v = states.v + dt * (states.dc + (params.v_steady - states.v) / params.tau_leak) + delta_v
         if new_v >= 30.0
             fire_fn()
             update(LIFStates(params.v_reset, params.tau_refractory))
             trigger_self()
         else
             update(LIFStates(new_v, zero(T)))
-            if i_syn !== zero(T) || abs(new_v - params.v_steady) > params.lazy_threshold
+            if abs(new_v - states.v_equilibrium) > params.lazy_threshold
                 trigger_self()
             end
         end
