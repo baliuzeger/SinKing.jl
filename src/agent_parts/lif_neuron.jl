@@ -48,16 +48,16 @@ function evolve(dt::T,
         if new_v >= 30.0
             fire_fn()
             update(LIFStates(params.v_reset, params.tau_refractory))
-            push_task(dt)
+            push_task()
         else
             update(LIFStates(new_v, zero(T)))
             if i_syn !== zero(T) || abs(new_v - params.v_steady) > params.lazy_threshold
-                push_task(dt)
+                push_task()
             end
         end
     else
         update(LIFStates(states.v, states.tau_refractory - dt))
-        push_task(dt)
+        push_task()
     end
 end
 

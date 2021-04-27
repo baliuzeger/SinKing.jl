@@ -113,7 +113,7 @@ function simulate(total_t::T,
         end
 
         function accept_signal(address::Address, signal::Signal)
-            run_process(address, () -> accept(get_agent(network, adrs), signal))
+            @async run_process(address, () -> accept(get_agent(network, adrs), signal))
         end
         
         for (adrs, work_t) in current_q
