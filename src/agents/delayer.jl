@@ -5,7 +5,7 @@ using ...Signals
 struct DelayerAgent{T <: AbstractFloat, U::Unsigned, V <: Signal}
     delay::T # delay time
     w::AbstractFloat
-    stack::Vector{(T, V)}
+    stack::Vector{(T, V)} # (time left, signal)
     donor::Address{U}
     acceptor::Address{U}
 end
@@ -44,8 +44,7 @@ end
 function act(address::Address{U},
              agent::DelayerAgent{T, V},
              dt::T,
-             push_task,
-             update_agent,
+             trigger,
              push_signal) where {T <: AbstractFloat, U <: Unsigned, V <: ForwardSignal}
 
     new_stack, due_stack = reduce(agent.stack; Init=(Vector{(T, V)}(undef, 0), Vector{V}(undef, 0)))
@@ -59,9 +58,10 @@ function act(address::Address{U},
     end
 
     foreach(s -> push_signal(agent.acceptor, s), due_stack)
-    update_agent(address, new_stack)
+    agent.stack - new_stack
+
     if length(new_stack) > 0
-        push_task(address)
+        trigger(address)
     end
     
 end
