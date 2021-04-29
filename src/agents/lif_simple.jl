@@ -47,32 +47,50 @@ function act(address::Address, # self address.
              agent::LIFSimpleAgent{T, U},
              dt::T,
              trigger, # (address) -> trigger for next step
-             update_self,
              push_signal) where{T <: AbstractFloat, U <: Unsigned}
 
-    states = agent.states
-    
-    function get_delta_v()
-        delta_v = states.sum_delta_v
-        states.sum_delta_v = zero(T)
-        delta_v
-    end
+    fired, triggered, new_lif_states = evolve(dt,
+                                              agent.states.lif,
+                                              agent.params.lif,
+                                              agent.states.sum_delta_v)
 
-    function fire_fn()
+    if fired
         signal = TimedDeltaV(zero(T), agent.params.delta_v)
         for adrs in agent.acceptors_t_delta_v
             trigger(adrs)
             push_signal(adrs, signal)
         end
     end
+
+    if triggered
+        trigger(address)
+    end
+
+    agent.states = LIFSimpleStates(new_lif_states, zero(T))
     
-    evolve(dt,
-           agent.states.lif,
-           agent.params.lif,
-           get_delta_v,
-           (lif_updates::LIFStates) -> update_agent(LIFSimpleStates(lif_updates, states.sum_delta_v)),
-           fire_fn,
-           () -> trigger(address))
+    # states = agent.states
+    
+    # function get_delta_v()
+    #     delta_v = states.sum_delta_v
+    #     states.sum_delta_v = zero(T)
+    #     delta_v
+    # end
+
+    # function fire_fn()
+    #     signal = TimedDeltaV(zero(T), agent.params.delta_v)
+    #     for adrs in agent.acceptors_t_delta_v
+    #         trigger(adrs)
+    #         push_signal(adrs, signal)
+    #     end
+    # end
+    
+    # evolve(dt,
+    #        agent.states.lif,
+    #        agent.params.lif,
+    #        get_delta_v,
+    #        (lif_updates::LIFStates) -> update_agent(LIFSimpleStates(lif_updates, states.sum_delta_v)),
+    #        fire_fn,
+    #        () -> trigger(address))
 
 end
 

@@ -37,7 +37,7 @@ end
 function evolve(dt::T,
                 states::LIFStates,
                 params::LIFParams,
-                delta_v) where {T <: AbstractFloat} # trigger self for next step.
+                delta_v::T) where {T <: AbstractFloat}
     if states.tau_refractory <= zero(T)
         new_v = states.v + dt * ((states.v_equilibrium - states.v) / params.tau_leak) + delta_v
         if new_v >= 30.0
@@ -50,7 +50,7 @@ function evolve(dt::T,
                 false, false, new_states
             end
         end
-    else
+    else # in refractory period.
         false, true, LIFStates(states.v, states.tau_refractory - dt, states.dc, states.v_equilibrium)
     end    
 end
