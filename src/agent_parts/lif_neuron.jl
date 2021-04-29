@@ -33,6 +33,7 @@ function udpate_dc(states::LIFStates{T},
     states.v_equilibrium = gen_v_eqlbrm(states.dc, params.tau_refractory, params.v_steady)
 end
 
+# return (evolved::Bool, fired::Bool, states::LIFStates)
 function evolve(dt::T,
                 states::LIFStates,
                 params::LIFParams,
@@ -43,19 +44,19 @@ function evolve(dt::T,
 
     if states.tau_refractory <= zero(T)
         delta_v = get_delta_v()
-        new_v = states.v + dt * (states.dc + (params.v_steady - states.v) / params.tau_leak) + delta_v
+        new_v = states.v + dt * ((states.v_equilibrium - states.v) / params.tau_leak) + delta_v
         if new_v >= 30.0
             fire_fn()
-            update(LIFStates(params.v_reset, params.tau_refractory))
+            update(LIFStates(params.v_reset, params.tau_refractory, states.dc, states.v_equilibrium))
             trigger_self()
         else
-            update(LIFStates(new_v, zero(T)))
+            update(LIFStates(new_v, zero(T), states.dc, states.v_equilibrium))
             if abs(new_v - states.v_equilibrium) > params.lazy_threshold
                 trigger_self()
             end
         end
     else
-        update(LIFStates(states.v, states.tau_refractory - dt))
+        update(LIFStates(states.v, states.tau_refractory - dt, states.dc, states.v_equilibrium))
         trigger_self()
     end
 end

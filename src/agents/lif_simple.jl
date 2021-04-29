@@ -24,13 +24,12 @@ mutable struct LIFSimpleAgent{T <: AbstractFloat, U <: Unsigned} <: Agent
     params::LIFSimpleParams{T}
     acceptors_delta_v::Vector{Address{U}} # agents that accept from self.
     donors_delta_v::Vector{Address{U}} # agents that donate to self.
-    stack_delta_v::Vector{DeltaV{T}}
     donors_dc::Vector{Address{U}}
 end
 
 function LIFSimpleAgent{T, U}(states::LIFStates{T},
                               params::LIFSimpleParams{T}) where {T <: AbstractFloat, U <: Unsigned}
-    LIFSimpleAgent{T, U}(states, params, [], [], [], [])
+    LIFSimpleAgent{T, U}(states, params, [], [], [])
     # LIFSimpleAgent{T, U}(states,
     #                      params,
     #                      Vector{Address{U}}(undef, 0),
@@ -69,7 +68,7 @@ function act(address::Address, # self address.
            agent.states.lif,
            agent.params.lif,
            get_delta_v,
-           (updates::LIFSimpleUpdates) -> update(agent, updates),
+           (lif_updates::LIFStates) -> update_agent(LIFSimpleStates(lif_updates, states.sum_delta_v)),
            fire_fn,
            () -> trigger(address))
 
