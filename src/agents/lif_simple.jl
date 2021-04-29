@@ -19,6 +19,11 @@ struct LIFSimpleStates{T <: AbstractFloat}
     sum_delta_v::T    
 end
 
+function LIFSimpleStates{T}(v::T,
+                            v_steady::T) where {T <: AbstractFloat}
+    LIFSimpleStates(LIFSimpleStates(v, v_steady), zero(T))
+end
+
 mutable struct LIFSimpleAgent{T <: AbstractFloat, U <: Unsigned} <: Agent
     states::LIFSimpleStates{T}
     params::LIFSimpleParams{T}

@@ -23,7 +23,7 @@ Point3D{T}() where {T <: AbstractFloat} = Point3D{T}(zero(T), zero(T), zero(T))
 
 struct Seat{T <: AbstractFloat}
     position::Point3D{T}
-    agent::Agent
+    agent::Agent # use abstract type but noet generic type for get_agent.
 end
 
 Seat{T}(agent::Agent) where {T <: AbstractFloat} = Seat(Point3D{T}(zero(T), zero(T), zero(T)), agent)

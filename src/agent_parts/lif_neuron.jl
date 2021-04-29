@@ -15,12 +15,18 @@ function gen_v_eqlbrm(dc::T, tau_refractory::T, v_steady::T) where {T <: Abstrac
 end
 
 function LIFStates{T}(v::T,
-                      t_refractory::T,
-                      dc::T,
-                      tau_refractory::T,
                       v_steady::T) where {T <: AbstractFloat}
-    LIFStates(v, t_refractory, dc, gen_v_eqlbrm(dc, tau_refractory, v_steady))
+    LIFStates(v, zero(T), zero(T), v_steady)
 end
+
+## seems useless?
+# function LIFStates{T}(v::T,
+#                       t_refractory::T,
+#                       dc::T,
+#                       tau_refractory::T,
+#                       v_steady::T) where {T <: AbstractFloat}
+#     LIFStates(v, t_refractory, dc, gen_v_eqlbrm(dc, tau_refractory, v_steady))
+# end
 
 struct LIFParams{T <: AbstractFloat}
     v_steady::T
