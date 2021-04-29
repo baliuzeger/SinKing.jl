@@ -47,9 +47,11 @@ function act(address::Address, # self address.
              agent::LIFSimpleAgent{T, U},
              dt::T,
              trigger, # (address) -> trigger for next step
-             update_agent,
+             update_self,
              push_signal) where{T <: AbstractFloat, U <: Unsigned}
 
+    states = agent.states
+    
     function get_delta_v()
         delta_v = states.sum_delta_v
         states.sum_delta_v = zero(T)

@@ -33,17 +33,37 @@ function udpate_dc(states::LIFStates{T},
     states.v_equilibrium = gen_v_eqlbrm(states.dc, params.tau_refractory, params.v_steady)
 end
 
-# return (evolved::Bool, fired::Bool, states::LIFStates)
+# return (fired::Bool, triggered::Bool, states::LIFStates) ?
 function evolve(dt::T,
                 states::LIFStates,
                 params::LIFParams,
-                get_delta_v, # () -> delta_v then reset sum_delta_v
+                delta_v) where {T <: AbstractFloat} # trigger self for next step.
+    if states.tau_refractory <= zero(T)
+        new_v = states.v + dt * ((states.v_equilibrium - states.v) / params.tau_leak) + delta_v
+        if new_v >= 30.0
+            true, true, LIFStates(params.v_reset, params.tau_refractory, states.dc, states.v_equilibrium)
+        else
+            new_states = LIFStates(new_v, zero(T), states.dc, states.v_equilibrium)
+            if abs(new_v - states.v_equilibrium) > params.lazy_threshold
+                false, true, new_states
+            else
+                false, false, new_states
+            end
+        end
+    else
+        false, true, LIFStates(states.v, states.tau_refractory - dt, states.dc, states.v_equilibrium)
+    end    
+end
+
+function evolve(dt::T,
+                states::LIFStates,
+                params::LIFParams,
+                delta_v, # always set sum_delta_v as 0.
                 update, # udpate LIF states
                 fire_fn, # trigger actions of fire.
                 trigger_self) where {T <: AbstractFloat} # trigger self for next step.
 
     if states.tau_refractory <= zero(T)
-        delta_v = get_delta_v()
         new_v = states.v + dt * ((states.v_equilibrium - states.v) / params.tau_leak) + delta_v
         if new_v >= 30.0
             fire_fn()
