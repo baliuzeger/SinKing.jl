@@ -1,10 +1,9 @@
 module Signals
 
 using ..Network
-export take_due_signals, name_t_delta_v, connect, Signal,
-    TimedDeltaV, TimedExctDeltaCond, TimedInhbtDeltaCond, TimedMarkram, TimedDC, name_t_dc,
-    add_acceptor, add_donor, can_add_acceptor, can_add_donor, TimedAdrsDC, name_t_adrs_dc,
-    name_back_spike, BackSpike
+export take_due_signals, connect, Signal, add_acceptor, add_donor, can_add_acceptor, can_add_donor,
+    name_back_spike, BackSpike, name_delta_v, DeltaV, name_dc_instruction, DCInstruction,
+    name_new_dc, NewDC
 
 abstract type ForwardSignal <: Signal end
 abstract type BackwardSignal <: Signal end
@@ -43,6 +42,12 @@ struct DCInstruction{T <: AbstractFloat} <: ForwardSignal
 end
 
 amplify(s::DCInstruction{T}, w::T) where {T <: AbstractFloat} = DCInstruction(s.previous * w, s.new * w)
+
+const name_new_dc = "NewDC"
+struct NewDC{T <: AbstractFloat} <: ForwardSignal
+    current::T
+end
+
 
 const name_back_spike = "BackSpike"
 struct BackSpike <: BackwardSignal
