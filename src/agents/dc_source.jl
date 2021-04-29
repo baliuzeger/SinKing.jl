@@ -12,9 +12,9 @@ mutable struct DCSourceAgent{T <: AbstractFloat, U <: Unsigned} <: Agent
     stack_new_dc::NewDC{T}
 end
 
-function DCSourceAgent{T, U}(current::T) where {T <: AbstractFloat, U <: Unsigned}
-    DCSourceAgent{T, U}(current, [], [])
-    # DCSourceAgent{T, U}(current,
+function DCSourceAgent{T, U}() where {T <: AbstractFloat, U <: Unsigned}
+    DCSourceAgent{T, U}(zero(T), [], [])
+    # DCSourceAgent{T, U}(zero(T),
     #                     Vector{Address{U}}(undef, 0),
     #                     Vector{TimedDC{T}}(undef, 0))
 end
