@@ -9,7 +9,7 @@ import ...Signals: add_acceptor, add_donor, can_add_acceptor, can_add_donor, acc
 mutable struct DCSourceAgent{T <: AbstractFloat, U <: Unsigned} <: Agent
     current::T
     acceptors_t_adrs_dc::Vector{Address{U}}
-    stack_t_dc::Vector{TimedDC{T}}
+    stack_new_dc::Vector{T}
 end
 
 function DCSourceAgent{T, U}(current::T) where {T <: AbstractFloat, U <: Unsigned}
@@ -19,10 +19,9 @@ function DCSourceAgent{T, U}(current::T) where {T <: AbstractFloat, U <: Unsigne
     #                     Vector{TimedDC{T}}(undef, 0))
 end
 
-struct DCSourceUpdates{T <: AbstractFloat} <: AgentUpdates
-    current::T
-    stack_t_dc::Vector{TimedDC{T}}
-end
+# struct DCSourceUpdates{T <: AbstractFloat} <: AgentUpdates
+#     current::T
+# end
 
 function update(agent::DCSourceAgent{T, U},
                 updates::DCSourceUpdates) where {T <: AbstractFloat, U <: Unsigned}

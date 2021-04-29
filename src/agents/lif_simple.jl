@@ -38,10 +38,10 @@ function LIFSimpleAgent{T, U}(states::LIFStates{T},
     #                      [])
 end
 
-function update(agent::LIFSimpleAgent{T, U},
-                updates::LIFSimpleStates{T}) where {T <: AbstractFloat, U <: Unsigned}
-    agent.states = updates
-end
+# function update(agent::LIFSimpleAgent{T, U},
+#                 updates::LIFSimpleStates{T}) where {T <: AbstractFloat, U <: Unsigned}
+#     agent.states = updates
+# end
 
 function act(address::Address, # self address.
              agent::LIFSimpleAgent{T, U},
@@ -95,7 +95,7 @@ function add_donor(agent::LIFSimpleAgent{T, U},
             error("Got unhandled signal_name on add_donor.")
         end
     else
-        error("LIFSimpleAgent cannot add $signal_name for donor. Address: $(address.population)-$(address.num)!")
+        error("LIFSimpleAgent cannot add $signal_name for donor of address: $(address.population)-$(address.num)!")
     end
 end
 
@@ -111,7 +111,7 @@ function add_acceptor(agent::LIFSimpleAgent{T, U},
     if can_add_acceptor(agent, signal_name)
         push!(agent.acceptors_delta_v, address)
     else
-        error("LIFSimpleAgent cannot add $signal_name acceptors!")
+        error("LIFSimpleAgent cannot add $signal_name acceptors of address: $(address.population)-$(address.num)!")
     end
 end
 
