@@ -80,36 +80,36 @@ end
 
 function can_add_donor(agent::LIFSimpleAgent{T, U},
                        signal_name::String) where{T <: AbstractFloat, U <: Unsigned}
-    signal_name == name_t_delta_v || signal_name == name_t_adrs_dc
+    signal_name == name_delta_v || signal_name == name_dc_instruction
 end
 
 function add_donor(agent::LIFSimpleAgent{T, U},
                    signal_name::String,
                    address::Address{U}) where{T <: AbstractFloat, U <: Unsigned}
     if can_add_donor(agent, signal_name)
-        if signal_name == name_t_delta_v
-            push!(agent.donors_t_delta_v, address)
-        elseif signal_name == name_t_adrs_dc
-            push!(agent.ports_dc, DCPort(address, zero(T), Vector{TimedDC{T}}(undef, 0)))
+        if signal_name == name_delta_v
+            push!(agent.donors_delta_v, address)
+        elseif signal_name == name_dc_instruction
+            push!(agent.donors_dc, address)
         else
             error("Got unhandled signal_name on add_donor.")
         end
     else
-        error("LIFSimpleAgent cannot add $signal_name for donor at $(address.population)-$(address.num)!")
+        error("LIFSimpleAgent cannot add $signal_name for donor. Address: $(address.population)-$(address.num)!")
     end
 end
 
 function can_add_acceptor(agent::LIFSimpleAgent{T, U},
                           signal_name::String) where{T <: AbstractFloat, U <: Unsigned}
     #println("LIFSimple can_add_acceptor: $(signal_name) vs $(name_t_delta_v), $(signal_name == name_t_delta_v)")
-    signal_name == name_t_delta_v
+    signal_name == name_delta_v
 end
 
 function add_acceptor(agent::LIFSimpleAgent{T, U},
                       signal_name::String,
                       address::Address{U}) where{T <: AbstractFloat, U <: Unsigned}
     if can_add_acceptor(agent, signal_name)
-        push!(agent.acceptors_t_delta_v, address)
+        push!(agent.acceptors_delta_v, address)
     else
         error("LIFSimpleAgent cannot add $signal_name acceptors!")
     end

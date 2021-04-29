@@ -5,7 +5,7 @@ using Printf
 
 mutable struct LIFStates{T <: AbstractFloat}
     v::T
-    tau_refractory::T
+    t_refractory::T
     dc::T
     v_equilibrium::T
 end
@@ -14,8 +14,12 @@ function gen_v_eqlbrm(dc::T, tau_refractory::T, v_steady::T) where {T <: Abstrac
     dc * tau_refractory + v_steady
 end
 
-function LIFStates{T}(v::T, tau_refractory::T, dc::T, v_steady::T) where {T <: AbstractFloat}
-    LIFStates(v, tau_refractory, dc, gen_v_eqlbrm(dc, tau_refractory, v_steady))
+function LIFStates{T}(v::T,
+                      t_refractory::T,
+                      dc::T,
+                      tau_refractory::T,
+                      v_steady::T) where {T <: AbstractFloat}
+    LIFStates(v, t_refractory, dc, gen_v_eqlbrm(dc, tau_refractory, v_steady))
 end
 
 struct LIFParams{T <: AbstractFloat}
@@ -38,7 +42,7 @@ function evolve(dt::T,
                 states::LIFStates,
                 params::LIFParams,
                 delta_v::T) where {T <: AbstractFloat}
-    if states.tau_refractory <= zero(T)
+    if states.t_refractory <= zero(T)
         new_v = states.v + dt * ((states.v_equilibrium - states.v) / params.tau_leak) + delta_v
         if new_v >= 30.0
             true, true, LIFStates(params.v_reset, params.tau_refractory, states.dc, states.v_equilibrium)
@@ -51,7 +55,7 @@ function evolve(dt::T,
             end
         end
     else # in refractory period.
-        false, true, LIFStates(states.v, states.tau_refractory - dt, states.dc, states.v_equilibrium)
+        false, true, LIFStates(states.v, states.t_refractory - dt, states.dc, states.v_equilibrium)
     end    
 end
 
