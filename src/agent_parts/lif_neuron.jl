@@ -55,30 +55,4 @@ function evolve(dt::T,
     end    
 end
 
-function evolve(dt::T,
-                states::LIFStates,
-                params::LIFParams,
-                delta_v, # always set sum_delta_v as 0.
-                update, # udpate LIF states
-                fire_fn, # trigger actions of fire.
-                trigger_self) where {T <: AbstractFloat} # trigger self for next step.
-
-    if states.tau_refractory <= zero(T)
-        new_v = states.v + dt * ((states.v_equilibrium - states.v) / params.tau_leak) + delta_v
-        if new_v >= 30.0
-            fire_fn()
-            update(LIFStates(params.v_reset, params.tau_refractory, states.dc, states.v_equilibrium))
-            trigger_self()
-        else
-            update(LIFStates(new_v, zero(T), states.dc, states.v_equilibrium))
-            if abs(new_v - states.v_equilibrium) > params.lazy_threshold
-                trigger_self()
-            end
-        end
-    else
-        update(LIFStates(states.v, states.tau_refractory - dt, states.dc, states.v_equilibrium))
-        trigger_self()
-    end
-end
-
 end # module end

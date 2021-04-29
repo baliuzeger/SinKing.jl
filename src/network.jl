@@ -65,7 +65,7 @@ end
 function simulate(total_t::T,
                   dt::T,
                   network::Dict{String, Population{U, T}},
-                  current_q::Dict{Address{U}, T},
+                  current_q::Set{Address{U}},
                   recording_agents::Vector{Address{U}}) where {T <: AbstractFloat, U <: Unsigned}
 
     total_steps = Int(total_t ÷ dt + 1)
@@ -96,7 +96,7 @@ function simulate(total_t::T,
             end
         end
 
-        function push_task(address::Address)
+        function trigger(address::Address)
             push!(next_q, address)
         end
 
@@ -108,32 +108,19 @@ function simulate(total_t::T,
             schedule(processes[address])
         end
         
-        # function update_agent(address::Address, updates::AgentUpdates)
-        #     @async run_process(address, () -> update(get_agent(network, adrs), updates))
-        # end
-
-        function accept_signal(address::Address, signal::Signal)
+        function push_signal(address::Address, signal::Signal)
             @async run_process(address, () -> accept(get_agent(network, adrs), signal))
         end
         
-        for (adrs, work_t) in current_q
-            if work_t <= zero(T)
-                act(adrs,
-                    get_agent(network ,adrs),
-                    dt,
-                    push_task, # (adress, next_t)
-                    update_agent, # (address, update)
-                    push_signal) # (adrs, signal)
-            else
-                next_q[adrs] = work_t - dt
-            end
+        for adrs in current_q
+            act(adrs,
+                get_agent(network ,adrs),
+                dt,
+                trigger, # (adress, )
+                push_signal) # (adrs, signal)
         end
 
         current_q = next_q
-            println(
-                "Network simulate ending. t: $(t_str), current_q: $(current_q)."
-            )
-
         t += dt
         index += 1
     end
