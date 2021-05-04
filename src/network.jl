@@ -50,16 +50,16 @@ function update end # (address, AgentUpdates) -> ()
 function state_dict end # () -> Dict
 function accept end # (agent, signal)
 
-function gen_all_q(nw::Dict{String, Population{T, V}}, t::V) where{T <: Unsigned, V <: AbstractFloat}
-    reduce((q, pair) -> merge(q,
-                              reduce((q2, pair2) -> merge(q2,
-                                                          Dict{Address{T}, V}([
-                                                              Address(pair[1], pair2[1]) => t
-                                                          ])),
-                                     pair[2].agents;
-                                     init=Dict{Address{T}, V}([]))),
-           nw;
-           init=Dict{Address{T}, V}([]))
+function gen_all_q(nw::Dict{String, Population{T, V}}) where {T <: Unsigned, V <: AbstractFloat}
+    reduce(nw; init=Set{Address{T}}([])) do (q, ppltn_pair)
+        merge(q,
+              reduce((q2, seat_pair) -> merge(q2,
+                                              Set{Address{T}}([
+                                                  Address(ppltn_pair[1], seat_pair[2])
+                                              ])),
+                     pair[2].agents;
+                     init=Set{Address{T}}([])))
+    end
 end
 
 function simulate(total_t::T,
