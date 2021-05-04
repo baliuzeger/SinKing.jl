@@ -51,13 +51,23 @@ function state_dict end # () -> Dict
 function accept end # (agent, signal)
 
 function gen_all_q(nw::Dict{String, Population{T, V}}) where {T <: Unsigned, V <: AbstractFloat}
-    reduce(nw; init=Set{Address{T}}([])) do (q, ppltn_pair)
-        merge(q,
-              reduce((q2, seat_pair) -> merge(q2,
+    # reduce((q, ppltn_pair) -> union(q,
+    #                                 reduce((q2, seat_pair) -> union(q2,
+    #                                                                 Set{Address{T}}([
+    #                                                                     Address(ppltn_pair[1], seat_pair[1])
+    #                                                                 ])),
+    #                                        ppltn_pair[2].agents;
+    #                                        init=Set{Address{T}}([]))),
+    #        nw;
+    #        init=Set{Address{T}}([]))
+    
+    reduce(nw; init=Set{Address{T}}([])) do q, ppltn_pair
+        union(q,
+              reduce((q2, seat_pair) -> union(q2,
                                               Set{Address{T}}([
-                                                  Address(ppltn_pair[1], seat_pair[2])
+                                                  Address(ppltn_pair[1], seat_pair[1])
                                               ])),
-                     pair[2].agents;
+                     ppltn_pair[2].agents;
                      init=Set{Address{T}}([])))
     end
 end
