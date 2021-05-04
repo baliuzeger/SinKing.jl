@@ -53,7 +53,6 @@ function act(address::Address, # self address.
              dt::T,
              trigger, # (address) -> trigger for next step
              push_signal) where{T <: AbstractFloat, U <: Unsigned}
-
     fired, triggered, new_lif_states = evolve(dt,
                                               agent.states.lif,
                                               agent.params.lif,
@@ -81,6 +80,7 @@ end
 function accept(agent::LIFSimpleAgent{T, U},
                 signal::DCInstruction{T}) where{T <: AbstractFloat, U <: Unsigned}
     update_dc(agent.states.lif, agent.params.lif, signal)
+    println("LIFSimple accept DCInstruction!")
 end
 
 function can_add_donor(agent::LIFSimpleAgent{T, U},

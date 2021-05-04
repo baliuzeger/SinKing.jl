@@ -94,7 +94,7 @@ function simulate(total_t::T,
     t = zero(T)
     index = 1
     while index <= total_steps
-        t_str = @printf("t: %.1f.", t) # print time.
+        #t_str = @printf("t: %.1f.", t) # print time.
 
         processes = Dict{Address{U}, Task}([])
         next_q = Set{Address{U}}([])
@@ -106,12 +106,16 @@ function simulate(total_t::T,
             end
         end
 
+        # need handle race too!!
         function trigger(address::Address)
+            println("trigger $(adrs)!!")
             push!(next_q, address)
+            println(next_q)
         end
 
         function run_process(address::Address{U}, fn)
             if haskey(processes, address) && ! istaskdone(processes[address])
+                println("wait for existing process.")
                 wait(processes[address])
             end
             processes[address] = @task fn()
@@ -119,16 +123,28 @@ function simulate(total_t::T,
         end
         
         function push_signal(address::Address, signal::Signal)
+            println("simultae push_signal!!")
             @async run_process(address, () -> accept(get_agent(network, adrs), signal))
         end
-        
-        for adrs in current_q
-            act(adrs,
-                get_agent(network ,adrs),
-                dt,
-                trigger, # (adress, )
-                push_signal) # (adrs, signal)
+
+        step_proc = @task begin
+            for adrs in current_q
+                @async run_process(adrs,
+                                   act(adrs,
+                                       get_agent(network ,adrs),
+                                       dt,
+                                       trigger, # (adress)
+                                       push_signal)) # (adrs, signal)
+                # act(adrs,
+                #     get_agent(network ,adrs),
+                #     dt,
+                #     trigger, # (adress, )
+                #     push_signal) # (adrs, signal)
+            end
         end
+
+        schedule(step_proc)
+        wait(step_proc)
 
         current_q = next_q
         t += dt

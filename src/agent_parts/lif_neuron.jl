@@ -41,6 +41,7 @@ function udpate_dc(states::LIFStates{T},
                    instruction::DCInstruction{T}) where {T <: AbstractFloat}
     states.dc = states.dc - instruction.previous + instruction.new
     states.v_equilibrium = gen_v_eqlbrm(states.dc, params.tau_refractory, params.v_steady)
+    println("LIFNeuron update_dc!")
 end
 
 # return (fired::Bool, triggered::Bool, states::LIFStates) ?
