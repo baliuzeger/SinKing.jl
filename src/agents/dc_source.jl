@@ -37,11 +37,11 @@ function act(address::Address{U},
              trigger,
              push_signal) where {T <: AbstractFloat, U <: Unsigned}
     if length(agent.stack_new_dc) > 0
-        new_current = last(agent.stack_new_dc)
+        new_current = last(agent.stack_new_dc).current
         instruction = DCInstruction(agent.current, new_current)
         for adrs in agent.acceptors_dc
             trigger(adrs)
-            push_signal(adrs, tadc)
+            push_signal(adrs, instruction)
         end
         agent.current = new_current
         agent.stack_new_dc = []

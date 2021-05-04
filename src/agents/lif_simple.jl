@@ -121,8 +121,10 @@ function add_acceptor(agent::LIFSimpleAgent{T, U},
 end
 
 function state_dict(agent::LIFSimpleAgent{T, U}) where{T <: AbstractFloat, U <: Unsigned}
-    Dict(["v" => agent.states.v,
-          "t_refractory" => agent.states.t_refractory])
+    Dict(["v" => agent.states.lif.v,
+          "t_refractory" => agent.states.lif.t_refractory,
+          "dc" => agent.states.lif.dc,
+          "v_equilibrium" => agent.states.lif.v_equilibrium])
 end
 
 end # module end
