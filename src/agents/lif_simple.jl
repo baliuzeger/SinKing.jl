@@ -1,5 +1,5 @@
 module LIFSimple
-export LIFSimpleAgent, accept, LIFSimpleParams
+export LIFSimpleAgent, accept, LIFSimpleParams, LIFSimpleStates
 using Printf
 using ...Types
 using ...AgentParts.LIFNeuron
@@ -19,9 +19,9 @@ struct LIFSimpleStates{T <: AbstractFloat}
     sum_delta_v::T    
 end
 
-function LIFSimpleStates{T}(v::T,
-                            v_steady::T) where {T <: AbstractFloat}
-    LIFSimpleStates(LIFSimpleStates(v, v_steady), zero(T))
+function LIFSimpleStates(v::T,
+                         v_steady::T) where {T <: AbstractFloat}
+    LIFSimpleStates(LIFStates(v, zero(T), zero(T), v_steady), zero(T))
 end
 
 mutable struct LIFSimpleAgent{T <: AbstractFloat, U <: Unsigned} <: Agent
@@ -32,7 +32,7 @@ mutable struct LIFSimpleAgent{T <: AbstractFloat, U <: Unsigned} <: Agent
     donors_dc::Vector{Address{U}}
 end
 
-function LIFSimpleAgent{T, U}(states::LIFStates{T},
+function LIFSimpleAgent{T, U}(states::LIFSimpleStates{T},
                               params::LIFSimpleParams{T}) where {T <: AbstractFloat, U <: Unsigned}
     LIFSimpleAgent{T, U}(states, params, [], [], [])
     # LIFSimpleAgent{T, U}(states,

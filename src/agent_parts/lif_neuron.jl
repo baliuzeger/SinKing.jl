@@ -37,7 +37,7 @@ struct LIFParams{T <: AbstractFloat}
 end
 
 function udpate_dc(states::LIFStates{T},
-                   params::LIFParams{T}
+                   params::LIFParams{T},
                    instruction::DCInstruction{T}) where {T <: AbstractFloat}
     states.dc = states.dc - instruction.previous + instruction.new
     states.v_equilibrium = gen_v_eqlbrm(states.dc, params.tau_refractory, params.v_steady)

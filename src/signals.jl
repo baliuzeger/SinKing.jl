@@ -3,7 +3,7 @@ module Signals
 using ..Network
 export take_due_signals, connect, Signal, add_acceptor, add_donor, can_add_acceptor, can_add_donor,
     name_back_spike, BackSpike, name_delta_v, DeltaV, name_dc_instruction, DCInstruction,
-    name_new_dc, NewDC
+    name_new_dc, NewDC, ForwardSignal, BackwardSignal
 
 abstract type ForwardSignal <: Signal end
 abstract type BackwardSignal <: Signal end
