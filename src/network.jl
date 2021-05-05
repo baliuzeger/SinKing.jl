@@ -98,7 +98,7 @@ function async_simulate(total_t::T,
                         current_q::Set{Address{U}},
                         recording_agents::Vector{Address{U}}) where {T <: AbstractFloat, U <: Unsigned}
 
-    total_steps = unsigned(total_t % dt + 1)
+    total_steps = UInt(fld(total_t, dt)) + 1
     df = init_df(network, recording_agents, total_steps)
     t = zero(T)
     index = 1
