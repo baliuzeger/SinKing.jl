@@ -40,9 +40,13 @@ function act(address::Address{U},
         new_current = last(agent.stack_new_dc).current
         instruction = DCInstruction(agent.current, new_current)
         for adrs in agent.acceptors_dc
+            println("DCSource fire!")
             trigger(adrs)
+            println("DCSource fire trigger end!")
             push_signal(adrs, instruction)
+            println("DCSource fire end!")
         end
+        println("DCSource act end!")
         agent.current = new_current
         agent.stack_new_dc = []
     end

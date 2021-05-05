@@ -72,11 +72,18 @@ function gen_all_q(nw::Dict{String, Population{T, V}}) where {T <: Unsigned, V <
     end
 end
 
+# function gen_trigger end # (next_q) -> (address) -> trigger
+# function gen_push_signal end # (network) -> (address, signal) -> push_signal
+# abstract type ProcStates end
+# function init_proc end
+# function exec_proc end
+
 function simulate(total_t::T,
                   dt::T,
                   network::Dict{String, Population{U, T}},
                   current_q::Set{Address{U}},
-                  recording_agents::Vector{Address{U}}) where {T <: AbstractFloat, U <: Unsigned}
+                  recording_agents::Vector{Address{U}},
+                  init_proc) where {T <: AbstractFloat, U <: Unsigned}
 
     total_steps = Int(total_t ÷ dt + 1)
     col_name = (adrs::Address, state_name::String) -> "$(adrs.population)_$(adrs.num)_$(state_name)"
@@ -94,9 +101,7 @@ function simulate(total_t::T,
     t = zero(T)
     index = 1
     while index <= total_steps
-        #t_str = @printf("t: %.1f.", t) # print time.
-
-        processes = Dict{Address{U}, Task}([])
+        proc_states = init_proc()
         next_q = Set{Address{U}}([])
 
         # store record here
@@ -106,46 +111,22 @@ function simulate(total_t::T,
             end
         end
 
-        # need handle race too!!
-        function trigger(address::Address)
-            println("trigger $(adrs)!!")
-            push!(next_q, address)
-            println(next_q)
+        trigger = gen_trigger(proc_states, next_q)
+        push_signal = gen_push_signal(proc_states, network)
+        exec_proc = gen_exec_proc(proc_states)
+
+        for adrs in current_q
+            taks_task(proc_states,
+                      adrs,
+                      () -> act(adrs,
+                                get_agent(network ,adrs),
+                                dt,
+                                trigger, # (address) -> trigger address
+                                push_signal)) # (adrs, signal) -> push signal to adrs
         end
 
-        function run_process(address::Address{U}, fn)
-            if haskey(processes, address) && ! istaskdone(processes[address])
-                println("wait for existing process.")
-                wait(processes[address])
-            end
-            processes[address] = @task fn()
-            schedule(processes[address])
-        end
+        exec_proc(current_q, network, trigger, push_signal)
         
-        function push_signal(address::Address, signal::Signal)
-            println("simultae push_signal!!")
-            @async run_process(address, () -> accept(get_agent(network, adrs), signal))
-        end
-
-        step_proc = @task begin
-            for adrs in current_q
-                @async run_process(adrs,
-                                   act(adrs,
-                                       get_agent(network ,adrs),
-                                       dt,
-                                       trigger, # (adress)
-                                       push_signal)) # (adrs, signal)
-                # act(adrs,
-                #     get_agent(network ,adrs),
-                #     dt,
-                #     trigger, # (adress, )
-                #     push_signal) # (adrs, signal)
-            end
-        end
-
-        schedule(step_proc)
-        wait(step_proc)
-
         current_q = next_q
         t += dt
         index += 1
