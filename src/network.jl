@@ -1,7 +1,7 @@
 module Network
 using Printf
 export Address, Point3D, Seat, Population, async_simulate, push_seat, get_agent, Agent, AgentUpdates,
-    gen_all_q, Signal, accept
+    gen_all_q, Signal, accept, serial_simulate
 using DataFrames
 
 abstract type Agent end
@@ -72,10 +72,13 @@ function gen_all_q(nw::Dict{String, Population{T, V}}) where {T <: Unsigned, V <
     end
 end
 
+function col_name(adrs::Address, state_name::String)
+    "$(adrs.population)_$(adrs.num)_$(state_name)"
+end
+
 function init_df(network::Dict{String, Population{U, T}},
                  recording_agents::Vector{Address{U}},
                  total_steps::U) where {T <: AbstractFloat, U <: Unsigned}
-    col_name = (adrs::Address, state_name::String) -> "$(adrs.population)_$(adrs.num)_$(state_name)"
     col_names = reduce((acc, adrs) -> [acc;
                                        reduce((acc, x) -> [acc; [col_name(adrs, x[1])]],
                                               state_dict(get_agent(network, adrs)),
@@ -86,7 +89,7 @@ function init_df(network::Dict{String, Population{U, T}},
     for name in col_names
         df[!, name] = repeat([zero(T)], total_steps)
     end
-    
+    df
 end
 
 function async_simulate(total_t::T,
@@ -95,7 +98,7 @@ function async_simulate(total_t::T,
                         current_q::Set{Address{U}},
                         recording_agents::Vector{Address{U}}) where {T <: AbstractFloat, U <: Unsigned}
 
-    total_steps = Int(total_t ÷ dt + 1)
+    total_steps = unsigned(total_t % dt + 1)
     df = init_df(network, recording_agents, total_steps)
     t = zero(T)
     index = 1
@@ -147,6 +150,55 @@ function async_simulate(total_t::T,
 
         schedule(step_proc)
         wait(step_proc)
+
+        current_q = next_q
+        t += dt
+        index += 1
+    end
+    df
+end
+
+function serial_simulate(total_t::T,
+                         dt::T,
+                         network::Dict{String, Population{U, T}},
+                         current_q::Set{Address{U}},
+                         recording_agents::Vector{Address{U}}) where {T <: AbstractFloat, U <: Unsigned}
+
+    total_steps = UInt(fld(total_t, dt)) + 1
+    df = init_df(network, recording_agents, total_steps)
+    t = zero(T)
+    index = UInt(1)
+    while index <= total_steps
+        #t_str = @printf("t: %.1f.", t) # print time.
+
+        next_q = Set{Address{U}}([])
+
+        # store record here
+        df[index, "t"] = t
+        for adrs in recording_agents
+            for (k, v) in state_dict(get_agent(network, adrs))
+                df[index, col_name(adrs, k)] = v
+            end
+        end
+
+        # need handle race too!!
+        function trigger(address::Address)
+            println("trigger $(adrs)!!")
+            push!(next_q, address)
+            println(next_q)
+        end
+        
+        function push_signal(address::Address, signal::Signal)
+            accept(get_agent(network, adrs), signal)
+        end
+
+        for adrs in current_q
+            act(adrs,
+                get_agent(network ,adrs),
+                dt,
+                trigger, # (adress)
+                push_signal)
+        end
 
         current_q = next_q
         t += dt
