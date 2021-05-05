@@ -1,11 +1,11 @@
 module Network
 using Printf
-export Address, Point3D, Seat, Population, async_simulate, push_seat, get_agent, Agent, AgentUpdates,
+export Address, Point3D, Seat, Population, async_simulate, push_seat, get_agent, Agent,
     gen_all_q, Signal, accept, serial_simulate
 using DataFrames
 
 abstract type Agent end
-abstract type AgentUpdates end
+#abstract type AgentUpdates end
 abstract type Signal end
 
 struct Address{T <: Unsigned}
@@ -46,7 +46,7 @@ function get_agent(network::Dict{String, Population{T, V}},
 end
 
 function act end
-function update end # (address, AgentUpdates) -> ()
+#function update end # (address, AgentUpdates) -> ()
 function state_dict end # () -> Dict
 function accept end # (agent, signal)
 
@@ -106,6 +106,7 @@ function async_simulate(total_t::T,
         #t_str = @printf("t: %.1f.", t) # print time.
 
         processes = Dict{Address{U}, Task}([])
+        next_q_proc = nothing
         next_q = Set{Address{U}}([])
 
         # store record here
@@ -117,9 +118,13 @@ function async_simulate(total_t::T,
         end
 
         # need handle race too!!
-        function trigger(address::Address)
+        function trigger(address::Address{U})
             println("trigger $(adrs)!!")
-            push!(next_q, address)
+            if ! isnothing(next_q_proc) && ! istaskdone(next_q_proc)
+                wait(next_q_proc)
+            end
+            next_q_proc = @task push!(next_q, address)
+            schedule(next_q_proc)
             println(next_q)
         end
 
@@ -130,21 +135,43 @@ function async_simulate(total_t::T,
             end
             processes[address] = @task fn()
             schedule(processes[address])
+            wait(processes[address])
         end
         
-        function push_signal(address::Address, signal::Signal)
+        function push_signal(address::Address{U}, signal::Signal)
             println("simultae push_signal!!")
-            @async run_process(address, () -> accept(get_agent(network, adrs), signal))
+            run_process(address, () -> accept(get_agent(network, adrs), signal))
         end
 
         step_proc = @task begin
             for adrs in current_q
-                @async run_process(adrs,
-                                   act(adrs,
-                                       get_agent(network ,adrs),
-                                       dt,
-                                       trigger, # (adress)
-                                       push_signal)) # (adrs, signal)
+                @async run_process(
+                    adrs,
+                    act(
+                        adrs,
+                        get_agent(network ,adrs),
+                        dt,
+                        #trigger, # (adress)
+                        #(address::Address{U}) -> trigger(address),
+                        (address::Address{U}) -> begin
+                        println("trigger $(adrs)!!")
+                        if ! isnothing(next_q_proc) && ! istaskdone(next_q_proc)
+                        wait(next_q_proc)
+                        end
+                        next_q_proc = @task push!(next_q, address)
+                        schedule(next_q_proc)
+                        wait(next_q_proc)
+                        println(next_q)
+                        end,
+                        #(x) -> println("fooo~~~~"),
+                        #(x, y) -> println("bar    fooo~~~~"),
+                        #push_signal
+                        (address::Address{U}, signal::Signal) -> begin
+                        println("simultae push_signal!!")
+                        run_process(address, () -> accept(get_agent(network, adrs), signal))
+                        end
+                    )
+                ) # (adrs, signal)
             end
         end
 
@@ -170,7 +197,7 @@ function serial_simulate(total_t::T,
     index = UInt(1)
     while index <= total_steps
         #t_str = @printf("t: %.1f.", t) # print time.
-
+        
         next_q = Set{Address{U}}([])
 
         # store record here
@@ -182,11 +209,11 @@ function serial_simulate(total_t::T,
         end
 
         # need handle race too!!
-        function trigger(address::Address)
+        function trigger(address::Address{U})
             push!(next_q, address)
         end
         
-        function push_signal(address::Address, signal::Signal)
+        function push_signal(address::Address{U}, signal::Signal)
             accept(get_agent(network, address), signal)
         end
 
