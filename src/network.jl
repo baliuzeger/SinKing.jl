@@ -1,6 +1,6 @@
 module Network
 using Printf
-export Address, Point3D, Seat, Population, simulate, push_seat, get_agent, Agent, AgentUpdates,
+export Address, Point3D, Seat, Population, async_simulate, push_seat, get_agent, Agent, AgentUpdates,
     gen_all_q, Signal, accept
 using DataFrames
 
@@ -72,7 +72,7 @@ function gen_all_q(nw::Dict{String, Population{T, V}}) where {T <: Unsigned, V <
     end
 end
 
-function simulate(total_t::T,
+function async_simulate(total_t::T,
                   dt::T,
                   network::Dict{String, Population{U, T}},
                   current_q::Set{Address{U}},
@@ -85,7 +85,7 @@ function simulate(total_t::T,
                                               state_dict(get_agent(network, adrs)),
                                               init = [])],
                        recording_agents;
-                       init = [])
+                       init = ["t"])
     df = DataFrame()
     for name in col_names
         df[!, name] = repeat([zero(T)], total_steps)
@@ -100,6 +100,7 @@ function simulate(total_t::T,
         next_q = Set{Address{U}}([])
 
         # store record here
+        df[index, "t"] = t
         for adrs in recording_agents
             for (k, v) in state_dict(get_agent(network, adrs))
                 df[index, col_name(adrs, k)] = v
