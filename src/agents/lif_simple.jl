@@ -57,8 +57,6 @@ function act(address::Address, # self address.
                                               agent.states.lif,
                                               agent.params.lif,
                                               agent.states.sum_delta_v)
-    agent.states = LIFSimpleStates(new_lif_states, zero(T))
-    
     triggered_agents = Set{Address{U}}([])
     signals_acceptors = Vector{Tuple{Signal, Vector{Address{U}}}}([])
     if fired
@@ -69,6 +67,9 @@ function act(address::Address, # self address.
     if triggered
         push!(triggered_agents, address)
     end
+    
+    agent.states = LIFSimpleStates(new_lif_states, zero(T))
+    
     (triggered_agents, signals_acceptors)
 end
 

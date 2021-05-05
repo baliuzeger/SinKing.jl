@@ -36,19 +36,19 @@ function act(address::Address{U},
              dt::T,
              trigger,
              push_signal) where {T <: AbstractFloat, U <: Unsigned}
+    triggered_agents = Set{Address{U}}([])
+    signals_acceptors = Vector{Tuple{Signal, Vector{Address{U}}}}([])
+    
     if length(agent.stack_new_dc) > 0
         new_current = last(agent.stack_new_dc).current
         instruction = DCInstruction(agent.current, new_current)
-        for adrs in agent.acceptors_dc
-            println("DCSource fire 1 !!")
-            trigger(adrs)
-            println("DCSource fire 2 !!")
-            push_signal(adrs, instruction)
-            println("DCSource fire 3 !!") 
-        end
+        push!(signals_acceptors, (instruction, agent.acceptors_dc))
+        union!(triggered_agents, Set(agent.acceptors_dc))
         agent.current = new_current
         agent.stack_new_dc = []
     end
+    
+    (triggered_agents, signals_acceptors)
 end
 
 function can_add_acceptor(agent::DCSourceAgent{T, U},
