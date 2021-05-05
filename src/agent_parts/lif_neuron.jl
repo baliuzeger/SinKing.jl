@@ -1,5 +1,5 @@
 module LIFNeuron
-export LIFStates, LIFParams, evolve
+export LIFStates, LIFParams, evolve, update_dc
 using ...Signals
 using Printf
 
@@ -36,7 +36,7 @@ struct LIFParams{T <: AbstractFloat}
     lazy_threshold::T
 end
 
-function udpate_dc(states::LIFStates{T},
+function update_dc(states::LIFStates{T},
                    params::LIFParams{T},
                    instruction::DCInstruction{T}) where {T <: AbstractFloat}
     states.dc = states.dc - instruction.previous + instruction.new

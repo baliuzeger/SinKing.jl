@@ -183,13 +183,11 @@ function serial_simulate(total_t::T,
 
         # need handle race too!!
         function trigger(address::Address)
-            println("trigger $(adrs)!!")
             push!(next_q, address)
-            println(next_q)
         end
         
         function push_signal(address::Address, signal::Signal)
-            accept(get_agent(network, adrs), signal)
+            accept(get_agent(network, address), signal)
         end
 
         for adrs in current_q

@@ -14,7 +14,7 @@ struct LIFSimpleParams{T <: AbstractFloat}
     delta_v::T
 end
 
-struct LIFSimpleStates{T <: AbstractFloat}
+mutable struct LIFSimpleStates{T <: AbstractFloat}
     lif::LIFStates{T}
     sum_delta_v::T    
 end
@@ -59,8 +59,8 @@ function act(address::Address, # self address.
                                               agent.states.sum_delta_v)
 
     if fired
-        signal = TimedDeltaV(zero(T), agent.params.delta_v)
-        for adrs in agent.acceptors_t_delta_v
+        signal = DeltaV(agent.params.delta_v)
+        for adrs in agent.acceptors_delta_v
             trigger(adrs)
             push_signal(adrs, signal)
         end
