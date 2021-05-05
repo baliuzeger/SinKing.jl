@@ -72,13 +72,9 @@ function gen_all_q(nw::Dict{String, Population{T, V}}) where {T <: Unsigned, V <
     end
 end
 
-function async_simulate(total_t::T,
-                  dt::T,
-                  network::Dict{String, Population{U, T}},
-                  current_q::Set{Address{U}},
-                  recording_agents::Vector{Address{U}}) where {T <: AbstractFloat, U <: Unsigned}
-
-    total_steps = Int(total_t ÷ dt + 1)
+function init_df(network::Dict{String, Population{U, T}},
+                 recording_agents::Vector{Address{U}},
+                 total_steps::U) where {T <: AbstractFloat, U <: Unsigned}
     col_name = (adrs::Address, state_name::String) -> "$(adrs.population)_$(adrs.num)_$(state_name)"
     col_names = reduce((acc, adrs) -> [acc;
                                        reduce((acc, x) -> [acc; [col_name(adrs, x[1])]],
@@ -91,6 +87,16 @@ function async_simulate(total_t::T,
         df[!, name] = repeat([zero(T)], total_steps)
     end
     
+end
+
+function async_simulate(total_t::T,
+                        dt::T,
+                        network::Dict{String, Population{U, T}},
+                        current_q::Set{Address{U}},
+                        recording_agents::Vector{Address{U}}) where {T <: AbstractFloat, U <: Unsigned}
+
+    total_steps = Int(total_t ÷ dt + 1)
+    df = init_df(network, recording_agents, total_steps)
     t = zero(T)
     index = 1
     while index <= total_steps
@@ -136,11 +142,6 @@ function async_simulate(total_t::T,
                                        dt,
                                        trigger, # (adress)
                                        push_signal)) # (adrs, signal)
-                # act(adrs,
-                #     get_agent(network ,adrs),
-                #     dt,
-                #     trigger, # (adress, )
-                #     push_signal) # (adrs, signal)
             end
         end
 
