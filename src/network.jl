@@ -199,6 +199,7 @@ function serial_simulate(total_t::T,
         #t_str = @printf("t: %.1f.", t) # print time.
         
         next_q = Set{Address{U}}([])
+        push_q = Vector{Tuple{Signal, Vector{Address{U}}}}([])
 
         # store record here
         df[index, "t"] = t
@@ -208,23 +209,30 @@ function serial_simulate(total_t::T,
             end
         end
 
-        # need handle race too!!
-        function trigger(address::Address{U})
-            push!(next_q, address)
-        end
+        # function trigger(address::Address{U})
+        #     push!(next_q, address)
+        # end
         
-        function push_signal(address::Address{U}, signal::Signal)
-            accept(get_agent(network, address), signal)
-        end
+        # function push_signal(address::Address{U}, signal::Signal)
+        #     accept(get_agent(network, address), signal)
+        # end
 
         for adrs in current_q
-            act(adrs,
-                get_agent(network ,adrs),
-                dt,
-                trigger, # (adress)
-                push_signal)
+            triggered_agents, signals_acceptors = act(adrs,
+                                                      get_agent(network ,adrs),
+                                                      dt,
+                                                      trigger, # (adress)
+                                                      push_signal)
+            union!(next_q, triggered_agents)
+            push!(push_q, signals_acceptors)
         end
 
+        for signal, targets in push_q
+            for adrs in targets
+                accept(get_agent(network, adrs), signal)
+            end
+        end
+        
         current_q = next_q
         t += dt
         index += 1

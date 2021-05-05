@@ -57,20 +57,19 @@ function act(address::Address, # self address.
                                               agent.states.lif,
                                               agent.params.lif,
                                               agent.states.sum_delta_v)
-
+    agent.states = LIFSimpleStates(new_lif_states, zero(T))
+    
+    triggered_agents = Set{Address{U}}([])
+    signals_acceptors = Vector{Tuple{Signal, Vector{Address{U}}}}([])
     if fired
         signal = DeltaV(agent.params.delta_v)
-        for adrs in agent.acceptors_delta_v
-            trigger(adrs)
-            push_signal(adrs, signal)
-        end
+        push!(signals_acceptors, (signal, agent.acceptors_delta_v))
+        union!(triggered_agents, Set(agent.acceptors_delta_v))
     end
-
     if triggered
-        trigger(address)
+        push!(triggered_agents, address)
     end
-
-    agent.states = LIFSimpleStates(new_lif_states, zero(T))
+    (triggered_agents, signals_acceptors)
 end
 
 function accept(agent::LIFSimpleAgent{T, U}, signal::DeltaV{T}) where{T <: AbstractFloat, U <: Unsigned}
