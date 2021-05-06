@@ -50,9 +50,7 @@ end
 
 function act(address::Address, # self address.
              agent::LIFSimpleAgent{T, U},
-             dt::T,
-             trigger, # (address) -> trigger for next step
-             push_signal) where{T <: AbstractFloat, U <: Unsigned}
+             dt::T) where{T <: AbstractFloat, U <: Unsigned}
     fired, triggered, new_lif_states = evolve(dt,
                                               agent.states.lif,
                                               agent.params.lif,

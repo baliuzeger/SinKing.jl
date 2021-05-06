@@ -33,9 +33,7 @@ state_dict(agent::DCSourceAgent) = Dict(["current" => agent.current])
 
 function act(address::Address{U},
              agent::DCSourceAgent{T, U},
-             dt::T,
-             trigger,
-             push_signal) where {T <: AbstractFloat, U <: Unsigned}
+             dt::T) where {T <: AbstractFloat, U <: Unsigned}
     triggered_agents = Set{Address{U}}([])
     signals_acceptors = Vector{Tuple{Signal, Vector{Address{U}}}}([])
     

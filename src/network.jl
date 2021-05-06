@@ -220,16 +220,14 @@ function serial_simulate(total_t::T,
         for adrs in current_q
             triggered_agents, signals_acceptors = act(adrs,
                                                       get_agent(network ,adrs),
-                                                      dt,
-                                                      trigger, # (adress)
-                                                      push_signal)
+                                                      dt)
             union!(next_q, triggered_agents)
             push!(push_q, signals_acceptors)
         end
 
-        for signal, targets in push_q
-            for adrs in targets
-                accept(get_agent(network, adrs), signal)
+        for st in push_q
+            for adrs in st[2]
+                accept(get_agent(network, adrs), st[1])
             end
         end
         
