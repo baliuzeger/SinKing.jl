@@ -222,7 +222,7 @@ function serial_simulate(total_t::T,
                                                       get_agent(network ,adrs),
                                                       dt)
             union!(next_q, triggered_agents)
-            push!(push_q, signals_acceptors)
+            append!(push_q, signals_acceptors)
         end
 
         for st in push_q

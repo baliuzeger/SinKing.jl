@@ -5,7 +5,7 @@ using ...Types
 using ...AgentParts.LIFNeuron
 using ...AgentParts.DC
 using ...Network
-import ...Network: act, update, state_dict, accept
+import ...Network: act, state_dict, accept
 using ...Signals
 import ...Signals: add_acceptor, add_donor, can_add_acceptor, can_add_donor, accept
 
