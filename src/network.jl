@@ -4,6 +4,7 @@ export Address, Point3D, Seat, Population, async_simulate, push_seat, get_agent,
     gen_all_q, Signal, accept, serial_simulate
 using DataFrames
 using Dates
+using Logging
 
 abstract type Agent end
 #abstract type AgentUpdates end
@@ -179,6 +180,12 @@ function serial_simulate(total_t::T,
                          current_q::Set{Address{U}},
                          recording_agents::Vector{Address{U}}) where {T <: AbstractFloat, U <: Unsigned}
 
+    @debug "network debug"
+    @Info "network Info"
+    @Warn "network Warn"
+    @Error "network error"
+
+    
     total_steps = UInt(fld(total_t, dt)) + 1
     df = init_df(network, recording_agents, total_steps)
     t = zero(T)
