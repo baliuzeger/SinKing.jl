@@ -1,30 +1,40 @@
 module LIFSimple
-export LIFSimpleAgent, accept, LIFSimpleParams
+export LIFSimpleAgent, accept, LIFSimpleParams, LIFSimpleStates
+using Printf
 using ...Types
 using ...AgentParts.LIFNeuron
 using ...AgentParts.DC
 using ...Network
-import ...Network: act, update, state_dict, accept
+import ...Network: act, state_dict, accept
 using ...Signals
 import ...Signals: add_acceptor, add_donor, can_add_acceptor, can_add_donor, accept
 
 struct LIFSimpleParams{T <: AbstractFloat}
     lif::LIFParams{T}
-    delta_v::T
+    fire_delta_v::T
+end
+
+mutable struct LIFSimpleStates{T <: AbstractFloat}
+    lif::LIFStates{T}
+    accepted_delta_v::T    
+end
+
+function LIFSimpleStates(v::T,
+                         v_steady::T) where {T <: AbstractFloat}
+    LIFSimpleStates(LIFStates(v, zero(T), zero(T), v_steady), zero(T))
 end
 
 mutable struct LIFSimpleAgent{T <: AbstractFloat, U <: Unsigned} <: Agent
-    states::LIFStates{T}
+    states::LIFSimpleStates{T}
     params::LIFSimpleParams{T}
-    acceptors_t_delta_v::Vector{Address{U}} # agents that accept from self.
-    donors_t_delta_v::Vector{Address{U}} # agents that donate to self.
-    stack_t_delta_v::Vector{TimedDeltaV{T}}
-    ports_dc::Vector{DCPort{T}}
+    acceptors_delta_v::Vector{Address{U}} # agents that accept from self.
+    donors_delta_v::Vector{Address{U}} # agents that donate to self.
+    donors_dc::Vector{Address{U}}
 end
 
-function LIFSimpleAgent{T, U}(states::LIFStates{T},
+function LIFSimpleAgent{T, U}(states::LIFSimpleStates{T},
                               params::LIFSimpleParams{T}) where {T <: AbstractFloat, U <: Unsigned}
-    LIFSimpleAgent{T, U}(states, params, [], [], [], [])
+    LIFSimpleAgent{T, U}(states, params, [], [], [])
     # LIFSimpleAgent{T, U}(states,
     #                      params,
     #                      Vector{Address{U}}(undef, 0),
@@ -33,148 +43,85 @@ function LIFSimpleAgent{T, U}(states::LIFStates{T},
     #                      [])
 end
 
+# function update(agent::LIFSimpleAgent{T, U},
+#                 updates::LIFSimpleStates{T}) where {T <: AbstractFloat, U <: Unsigned}
+#     agent.states = updates
+# end
 
-mutable struct LIFSimpleUpdates{T <: AbstractFloat} <: AgentUpdates
-    states::LIFStates{T}
-    stack_t_delta_v::Vector{TimedDeltaV{T}}
-    ports_dc::Vector{DCPort{T}}
-end
-
-function update(agent::LIFSimpleAgent{T, U},
-                updates::LIFSimpleUpdates{T}) where {T <: AbstractFloat, U <: Unsigned}
-    agent.states = updates.states
-    agent.stack_t_delta_v = updates.stack_t_delta_v
-    agent.ports_dc = updates.ports_dc
-end
-
-function act(address::Address,
+function act(address::Address, # self address.
              agent::LIFSimpleAgent{T, U},
-             t::T,
-             dt::T,
-             push_task,
-             update_agent,
-             push_signal) where{T <: AbstractFloat, U <: Unsigned}
-
-    updates = LIFSimpleUpdates(agent.states, agent.stack_t_delta_v, agent.ports_dc)
-    fired = false
-    next_t = nothing
-
-    function lif_push_task(t)
-        if isnothing(next_t)
-            next_t = t
-        else
-            next_t = next_t < t ? next_t : t
-        end
-    end
-    
-    function inject_fn()
-        i_syn, updates.ports_dc = gen_dc_updates(t, dt, agent.ports_dc)
-        if abs(i_syn) > 0
-            lif_push_task(t + dt)
-        end
-        
-        updates.stack_t_delta_v, tdv_signals = take_due_signals(t, agent.stack_t_delta_v)
-        if ! isnothing(agent.states.refractory_end) # at end of refractory
-            signals = filter(s -> s.t >= agent.states.refractory_end, signals)
-        end
-        delta_v = reduce((acc, x) -> acc + x.delta_v, tdv_signals; init=0.0)
-
-        (i_syn, delta_v) # (i_syn, delta_v)
-    end
-
-    function lif_update(states::LIFStates)
-        updates.states = states
-    end
-
-    function fire_fn()
-        fired = true
-    end
-
-    
-    evolve(t,
-           dt,
-           agent.states,
-           agent.params.lif,
-           inject_fn,
-           lif_update,
-           fire_fn,
-           lif_push_task)
-
-    update_agent(address, updates)
-
-    if ! isnothing(next_t)
-        push_task(address, next_t)
-    end
+             dt::T) where{T <: AbstractFloat, U <: Unsigned}
+    fired, triggered, new_lif_states = evolve(dt,
+                                              agent.states.lif,
+                                              agent.params.lif,
+                                              agent.states.accepted_delta_v)
+    triggered_agents = Set{Address{U}}([])
+    signals_acceptors = Vector{Tuple{Signal, Vector{Address{U}}}}([])
     if fired
-        signal = TimedDeltaV(next_t, agent.params.delta_v)
-        for adrs in agent.acceptors_t_delta_v
-            push_task(adrs, next_t)
-            push_signal(adrs, signal)
-        end
+        signal = DeltaV(agent.params.fire_delta_v)
+        push!(signals_acceptors, (signal, agent.acceptors_delta_v))
+        union!(triggered_agents, Set(agent.acceptors_delta_v))
     end
+    if triggered
+        push!(triggered_agents, address)
+    end
+    
+    agent.states = LIFSimpleStates(new_lif_states, zero(T))
+    
+    (triggered_agents, signals_acceptors)
 end
 
-function accept(agent::LIFSimpleAgent{T, U}, signal::TimedDeltaV{T}) where{T <: AbstractFloat, U <: Unsigned}
-    push!(agent.stack_t_delta_v, signal)
+function accept(agent::LIFSimpleAgent{T, U}, signal::DeltaV{T}) where{T <: AbstractFloat, U <: Unsigned}
+    agent.states.accepted_delta_v += signal.delta_v
 end
 
 function accept(agent::LIFSimpleAgent{T, U},
-                signal::TimedAdrsDC{T, U}) where{T <: AbstractFloat, U <: Unsigned}
-    found_port = false
-    for port in agent.ports_dc
-        if port.address == signal.source
-            push!(port.stack, TimedDC(signal.t, signal.current))
-            #println("LifSimple accept TimedAdrsDC!")
-            found_port = true
-        end
-    end
-    if ! found_port
-        error(
-            "LIFSimpleAgent accept $(name_t_adrs_dc) from unregistered donor $(signal.source.population)-$(signal.source.num)!"
-        )
-    end
+                signal::DCInstruction{T}) where{T <: AbstractFloat, U <: Unsigned}
+    update_dc(agent.states.lif, agent.params.lif, signal)
 end
 
 function can_add_donor(agent::LIFSimpleAgent{T, U},
                        signal_name::String) where{T <: AbstractFloat, U <: Unsigned}
-    signal_name == name_t_delta_v || signal_name == name_t_adrs_dc
+    signal_name == name_delta_v || signal_name == name_dc_instruction
 end
 
 function add_donor(agent::LIFSimpleAgent{T, U},
                    signal_name::String,
                    address::Address{U}) where{T <: AbstractFloat, U <: Unsigned}
     if can_add_donor(agent, signal_name)
-        if signal_name == name_t_delta_v
-            push!(agent.donors_t_delta_v, address)
-        elseif signal_name == name_t_adrs_dc
-            push!(agent.ports_dc, DCPort(address, zero(T), Vector{TimedDC{T}}(undef, 0)))
+        if signal_name == name_delta_v
+            push!(agent.donors_delta_v, address)
+        elseif signal_name == name_dc_instruction
+            push!(agent.donors_dc, address)
         else
             error("Got unhandled signal_name on add_donor.")
         end
     else
-        error("LIFSimpleAgent cannot add $signal_name for donor at $(address.population)-$(address.num)!")
+        error("LIFSimpleAgent cannot add $signal_name for donor of address: $(address.population)-$(address.num)!")
     end
 end
 
 function can_add_acceptor(agent::LIFSimpleAgent{T, U},
                           signal_name::String) where{T <: AbstractFloat, U <: Unsigned}
     #println("LIFSimple can_add_acceptor: $(signal_name) vs $(name_t_delta_v), $(signal_name == name_t_delta_v)")
-    signal_name == name_t_delta_v
+    signal_name == name_delta_v
 end
 
 function add_acceptor(agent::LIFSimpleAgent{T, U},
                       signal_name::String,
                       address::Address{U}) where{T <: AbstractFloat, U <: Unsigned}
     if can_add_acceptor(agent, signal_name)
-        push!(agent.acceptors_t_delta_v, address)
+        push!(agent.acceptors_delta_v, address)
     else
-        error("LIFSimpleAgent cannot add $signal_name acceptors!")
+        error("LIFSimpleAgent cannot add $signal_name acceptors of address: $(address.population)-$(address.num)!")
     end
 end
 
 function state_dict(agent::LIFSimpleAgent{T, U}) where{T <: AbstractFloat, U <: Unsigned}
-    Dict(["v" => agent.states.v,
-          "refractory" => isnothing(agent.states.refractory_end) ? 0 : 1])
+    Dict(["v" => agent.states.lif.v,
+          "t_refractory" => agent.states.lif.t_refractory,
+          "dc" => agent.states.lif.dc,
+          "v_equilibrium" => agent.states.lif.v_equilibrium])
 end
 
 end # module end

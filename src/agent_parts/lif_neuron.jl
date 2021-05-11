@@ -1,10 +1,32 @@
 module LIFNeuron
-export LIFStates, LIFParams, evolve
+export LIFStates, LIFParams, evolve, update_dc
+using ...Signals
+using Printf
 
-struct LIFStates{T <: AbstractFloat}
+mutable struct LIFStates{T <: AbstractFloat}
     v::T
-    refractory_end::Union{Nothing, T}
+    t_refractory::T
+    dc::T
+    v_equilibrium::T
 end
+
+function gen_v_eqlbrm(dc::T, tau_refractory::T, v_steady::T) where {T <: AbstractFloat}
+    dc * tau_refractory + v_steady
+end
+
+function LIFStates{T}(v::T,
+                      v_steady::T) where {T <: AbstractFloat}
+    LIFStates(v, zero(T), zero(T), v_steady)
+end
+
+## seems useless?
+# function LIFStates{T}(v::T,
+#                       t_refractory::T,
+#                       dc::T,
+#                       tau_refractory::T,
+#                       v_steady::T) where {T <: AbstractFloat}
+#     LIFStates(v, t_refractory, dc, gen_v_eqlbrm(dc, tau_refractory, v_steady))
+# end
 
 struct LIFParams{T <: AbstractFloat}
     v_steady::T
@@ -14,30 +36,33 @@ struct LIFParams{T <: AbstractFloat}
     lazy_threshold::T
 end
 
-function evolve(t::T,
-                dt::T,
+function update_dc(states::LIFStates{T},
+                   params::LIFParams{T},
+                   instruction::DCInstruction{T}) where {T <: AbstractFloat}
+    states.dc = states.dc - instruction.previous + instruction.new
+    states.v_equilibrium = gen_v_eqlbrm(states.dc, params.tau_refractory, params.v_steady)
+end
+
+# return (fired::Bool, triggered::Bool, states::LIFStates) ?
+function evolve(dt::T,
                 states::LIFStates,
                 params::LIFParams,
-                inject_fn, # trigger handling accepted signals & return injections
-                update, # udpate LIF states
-                fire_fn, # trigger actions of fire.
-                push_task) where {T <: AbstractFloat} # push self's next task by next_t
-    
-    if isnothing(states.refractory_end) || states.refractory_end <= t
-        i_syn, delta_v = inject_fn()
-        new_v = states.v +  dt * (i_syn + (params.v_steady - states.v) / params.tau_leak) + delta_v
+                delta_v::T) where {T <: AbstractFloat}
+    if states.t_refractory <= zero(T)
+        new_v = states.v + dt * ((states.v_equilibrium - states.v) / params.tau_leak) + delta_v
         if new_v >= 30.0
-            fire_fn()
-            refractory_end = t + params.tau_refractory
-            update(LIFStates(params.v_reset, refractory_end))
-            # push_task(refractory_end) # lazy!!!
+            true, true, LIFStates(params.v_reset, params.tau_refractory, states.dc, states.v_equilibrium)
         else
-            update(LIFStates(new_v, nothing))
-            if abs(new_v - params.v_steady) > params.lazy_threshold
-                push_task(t + dt)
+            new_states = LIFStates(new_v, zero(T), states.dc, states.v_equilibrium)
+            if abs(new_v - states.v_equilibrium) > params.lazy_threshold
+                false, true, new_states
+            else
+                false, false, new_states
             end
         end
-    end
+    else # in refractory period.
+        false, true, LIFStates(states.v, states.t_refractory - dt, states.dc, states.v_equilibrium)
+    end    
 end
 
 end # module end

@@ -1,10 +1,11 @@
 module Network
-export Address, Point3D, Seat, Population, simulate, push_seat, get_agent, Agent, AgentUpdates,
-    gen_all_q, Signal, accept
+using Printf
+export Address, Point3D, Seat, Population, async_simulate, push_seat, get_agent, Agent,
+    gen_all_q, Signal, accept, serial_simulate
 using DataFrames
 
 abstract type Agent end
-abstract type AgentUpdates end
+#abstract type AgentUpdates end
 abstract type Signal end
 
 struct Address{T <: Unsigned}
@@ -22,7 +23,7 @@ Point3D{T}() where {T <: AbstractFloat} = Point3D{T}(zero(T), zero(T), zero(T))
 
 struct Seat{T <: AbstractFloat}
     position::Point3D{T}
-    agent::Agent
+    agent::Agent # use abstract type but noet generic type for get_agent.
 end
 
 Seat{T}(agent::Agent) where {T <: AbstractFloat} = Seat(Point3D{T}(zero(T), zero(T), zero(T)), agent)
@@ -45,95 +46,167 @@ function get_agent(network::Dict{String, Population{T, V}},
 end
 
 function act end
-function update end # (address, AgentUpdates) -> ()
+#function update end # (address, AgentUpdates) -> ()
 function state_dict end # () -> Dict
 function accept end # (agent, signal)
 
-function gen_all_q(nw::Dict{String, Population{T, V}}, t::V) where{T <: Unsigned, V <: AbstractFloat}
-    reduce((q, pair) -> merge(q,
-                              reduce((q2, pair2) -> merge(q2,
-                                                          Dict{Address{T}, V}([
-                                                              Address(pair[1], pair2[1]) => t
-                                                          ])),
-                                     pair[2].agents;
-                                     init=Dict{Address{T}, V}([]))),
-           nw;
-           init=Dict{Address{T}, V}([]))
+function gen_all_q(nw::Dict{String, Population{T, V}}) where {T <: Unsigned, V <: AbstractFloat}
+    # reduce((q, ppltn_pair) -> union(q,
+    #                                 reduce((q2, seat_pair) -> union(q2,
+    #                                                                 Set{Address{T}}([
+    #                                                                     Address(ppltn_pair[1], seat_pair[1])
+    #                                                                 ])),
+    #                                        ppltn_pair[2].agents;
+    #                                        init=Set{Address{T}}([]))),
+    #        nw;
+    #        init=Set{Address{T}}([]))
+    
+    reduce(nw; init=Set{Address{T}}([])) do q, ppltn_pair
+        union(q,
+              reduce((q2, seat_pair) -> union(q2,
+                                              Set{Address{T}}([
+                                                  Address(ppltn_pair[1], seat_pair[1])
+                                              ])),
+                     ppltn_pair[2].agents;
+                     init=Set{Address{T}}([])))
+    end
 end
 
-function simulate(start_t::T,
-                  end_t::T,
-                  dt::T,
-                  network::Dict{String, Population{U, T}},
-                  current_q::Dict{Address{U}, T},
-                  recording_agents::Vector{Address{U}}) where {T <: AbstractFloat, U <: Unsigned}
+function gen_all_lk(nw::Dict{String, Population{T, V}}) where {T <: Unsigned, V <: AbstractFloat}
+    reduce(nw; init=Dict{Address{T}, ReentrantLock}([])) do dict, ppltn_pair
+        merge(dict,
+              reduce((dict2, seat_pair) -> merge(dict2,
+                                                 Dict{Address{T}, ReentrantLock}([
+                                                     (Address(ppltn_pair[1], seat_pair[1]), ReentrantLock())
+                                                 ])),
+                     ppltn_pair[2].agents;
+                     init=Dict{Address{T}, ReentrantLock}([])))
+    end
+end
 
-    total_steps = Int((end_t - start_t) ÷ dt + 1)
-    col_name = (adrs::Address, state_name::String) -> "$(adrs.population)_$(adrs.num)_$(state_name)"
+function col_name(adrs::Address, state_name::String)
+    "$(adrs.population)_$(adrs.num)_$(state_name)"
+end
+
+function init_df(network::Dict{String, Population{U, T}},
+                 recording_agents::Vector{Address{U}},
+                 total_steps::U) where {T <: AbstractFloat, U <: Unsigned}
     col_names = reduce((acc, adrs) -> [acc;
                                        reduce((acc, x) -> [acc; [col_name(adrs, x[1])]],
                                               state_dict(get_agent(network, adrs)),
                                               init = [])],
                        recording_agents;
-                       init = [])
+                       init = ["t"])
     df = DataFrame()
     for name in col_names
-        df[!, name] = repeat([0.0::T], total_steps)
+        df[!, name] = repeat([zero(T)], total_steps)
     end
-    
-    t = start_t
+    df
+end
+
+function async_simulate(total_t::T,
+                        dt::T,
+                        network::Dict{String, Population{U, T}},
+                        current_q::Set{Address{U}},
+                        recording_agents::Vector{Address{U}}) where {T <: AbstractFloat, U <: Unsigned}
+
+    total_steps = UInt(fld(total_t, dt)) + 1
+    df = init_df(network, recording_agents, total_steps)
+    t = zero(T)
     index = 1
     while index <= total_steps
-        agent_updates::Dict{Address, AgentUpdates} = Dict([])
-        accepted_signals::Dict{Address, Vector{Signal}} = Dict([])
-        next_q = Dict([])
+        #t_str = @printf("t: %.1f.", t) # print time.
 
-        # store record here
+        df[index, "t"] = t
         for adrs in recording_agents
             for (k, v) in state_dict(get_agent(network, adrs))
                 df[index, col_name(adrs, k)] = v
             end
         end
         
-        function push_task(address, next_t)
-            next_q[address] = next_t
+        agent_proccesses = Dict{Address{U}, Task}([])
+        agent_lks = gen_all_lk(network)
+        next_q_lk = ReentrantLock()
+        next_q = Set{Address{U}}([])
+        accepting_signals_lk = ReentrantLock()
+        accepting_signals = Vector{Tuple{Signal, Vector{Address{U}}}}([])
+        
+        act_tasks = reduce(current_q; init=Vector{Task}([])) do acc, adrs
+            task = @task begin
+                # use update to let act be puer function?
+                triggered_agents, generated_signals = act(adrs,
+                                                          get_agent(network ,adrs),
+                                                          dt)
+                lock(next_q_lk) do
+                    union!(next_q, triggered_agents)
+                end
+                lock(accepting_signals_lk) do
+                    append!(accepting_signals, generated_signals)
+                end
+            end
+            schedule(task)
+            [acc..., task]
+        end
+        foreach((task) -> wait(task), act_tasks)
+
+        accept_tasks = map(accepting_signals) do signal_acceptors
+            task = @task begin
+                for adrs in signal_acceptors[2]
+                    lock(agent_lks[adrs]) do
+                        accept(get_agent(network, adrs), signal_acceptors[1])
+                    end
+                end
+            end
+            schedule(task)
+            task            
+        end
+        foreach((task) -> wait(task), accept_tasks)
+                    
+        current_q = next_q
+        t += dt
+        index += 1
+    end
+    df
+end
+
+function serial_simulate(total_t::T,
+                         dt::T,
+                         network::Dict{String, Population{U, T}},
+                         current_q::Set{Address{U}},
+                         recording_agents::Vector{Address{U}}) where {T <: AbstractFloat, U <: Unsigned}
+
+    total_steps = UInt(fld(total_t, dt)) + 1
+    df = init_df(network, recording_agents, total_steps)
+    t = zero(T)
+    index = UInt(1)
+    while index <= total_steps
+        #t_str = @printf("t: %.1f.", t) # print time.
+        
+        next_q = Set{Address{U}}([])
+        push_q = Vector{Tuple{Signal, Vector{Address{U}}}}([])
+
+        df[index, "t"] = t
+        for adrs in recording_agents
+            for (k, v) in state_dict(get_agent(network, adrs))
+                df[index, col_name(adrs, k)] = v
+            end
         end
 
-        function update_agent(address, updates)
-            agent_updates[address] = updates
+        for adrs in current_q
+            triggered_agents, signals_acceptors = act(adrs,
+                                                      get_agent(network ,adrs),
+                                                      dt)
+            union!(next_q, triggered_agents)
+            append!(push_q, signals_acceptors)
         end
 
-        function push_signal(address, signal)
-            #println("Simultae push_signal!")
-            if haskey(accepted_signals, address)
-                push!(accepted_signals[address], signal)
-            else
-                accepted_signals[address] = [signal]
+        for st in push_q
+            for adrs in st[2]
+                accept(get_agent(network, adrs), st[1])
             end
         end
         
-        for (adrs, work_t) in current_q
-            if work_t <= t
-                act(adrs,
-                    get_agent(network ,adrs),
-                    t,
-                    dt,
-                    push_task, # (adress, next_t)
-                    update_agent, # (address, update)
-                    push_signal) # (adrs, signal)
-            else
-                next_q[adrs] = work_t
-            end
-        end
-
         current_q = next_q
-        for (adrs, updates) in agent_updates
-            update(get_agent(network, adrs), updates)
-        end
-        for (adrs, signals) in accepted_signals
-            #println("$(adrs) accept $(signals)")
-            foreach(s -> accept(get_agent(network, adrs), s), signals)
-        end
         t += dt
         index += 1
     end
