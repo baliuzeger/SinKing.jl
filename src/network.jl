@@ -3,6 +3,7 @@ using Printf
 export Address, Point3D, Seat, Population, async_simulate, push_seat, get_agent, Agent,
     gen_all_q, Signal, accept, serial_simulate
 using DataFrames
+using Dates
 
 abstract type Agent end
 #abstract type AgentUpdates end
@@ -114,6 +115,8 @@ function async_simulate(total_t::T,
     df = init_df(network, recording_agents, total_steps)
     t = zero(T)
     index = 1
+
+    start_t = now()
     while index <= total_steps
         #t_str = @printf("t: %.1f.", t) # print time.
 
@@ -166,6 +169,7 @@ function async_simulate(total_t::T,
         t += dt
         index += 1
     end
+    println(now() - start_t)
     df
 end
 
@@ -179,6 +183,8 @@ function serial_simulate(total_t::T,
     df = init_df(network, recording_agents, total_steps)
     t = zero(T)
     index = UInt(1)
+
+    start_t = now()
     while index <= total_steps
         #t_str = @printf("t: %.1f.", t) # print time.
         
@@ -210,6 +216,7 @@ function serial_simulate(total_t::T,
         t += dt
         index += 1
     end
+    println(now() - start_t)
     df
 end
 
