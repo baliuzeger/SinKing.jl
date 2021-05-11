@@ -72,6 +72,18 @@ function gen_all_q(nw::Dict{String, Population{T, V}}) where {T <: Unsigned, V <
     end
 end
 
+function gen_all_lk(nw::Dict{String, Population{T, V}}) where {T <: Unsigned, V <: AbstractFloat}
+    reduce(nw; init=Set{Address{T}}([])) do dict, ppltn_pair
+        merge(dict,
+              reduce((dict2, seat_pair) -> merge(dict2,
+                                                 Dict{Address{T}, ReentrantLock}([
+                                                     Address(ppltn_pair[1], ReentrantLock())
+                                                 ])),
+                     ppltn_pair[2].agents;
+                     init=Dict{Address{T}, ReentrantLock}([])))
+    end
+end
+
 function col_name(adrs::Address, state_name::String)
     "$(adrs.population)_$(adrs.num)_$(state_name)"
 end
@@ -105,9 +117,12 @@ function async_simulate(total_t::T,
     while index <= total_steps
         #t_str = @printf("t: %.1f.", t) # print time.
 
-        processes = Dict{Address{U}, Task}([])
+        agent_proccesses = Dict{Address{U}, Task}([])
         next_q_proc = nothing
         next_q = Set{Address{U}}([])
+        push_q_proc = nothing
+        push_q = Vector{Tuple{Signal, Vector{Address{U}}}}([])
+
 
         # store record here
         df[index, "t"] = t
@@ -117,16 +132,16 @@ function async_simulate(total_t::T,
             end
         end
 
-        # need handle race too!!
-        function trigger(address::Address{U})
-            println("trigger $(adrs)!!")
-            if ! isnothing(next_q_proc) && ! istaskdone(next_q_proc)
-                wait(next_q_proc)
-            end
-            next_q_proc = @task push!(next_q, address)
-            schedule(next_q_proc)
-            println(next_q)
-        end
+        # # need handle race too!!
+        # function trigger(address::Address{U})
+        #     println("trigger $(adrs)!!")
+        #     if ! isnothing(next_q_proc) && ! istaskdone(next_q_proc)
+        #         wait(next_q_proc)
+        #     end
+        #     next_q_proc = @task push!(next_q, address)
+        #     schedule(next_q_proc)
+        #     println(next_q)
+        # end
 
         function run_process(address::Address{U}, fn)
             if haskey(processes, address) && ! istaskdone(processes[address])
@@ -138,10 +153,10 @@ function async_simulate(total_t::T,
             wait(processes[address])
         end
         
-        function push_signal(address::Address{U}, signal::Signal)
-            println("simultae push_signal!!")
-            run_process(address, () -> accept(get_agent(network, adrs), signal))
-        end
+        # function push_signal(address::Address{U}, signal::Signal)
+        #     println("simultae push_signal!!")
+        #     run_process(address, () -> accept(get_agent(network, adrs), signal))
+        # end
 
         step_proc = @task begin
             for adrs in current_q
@@ -178,6 +193,49 @@ function async_simulate(total_t::T,
         schedule(step_proc)
         wait(step_proc)
 
+        function check_schedule(proc, fn) # it's actually mutex-lock.....
+            if ! isnothing(proc) && ! istaskdone(proc)
+                wait(proc)
+            end
+            proc = @task fn()
+            schedule(proc)
+            wait(proc) #?
+        end
+        
+        map(current_q) do adrs
+            task = @task begin
+                triggered_agents, signals_acceptors = act(adrs,
+                                                          get_agent(network ,adrs),
+                                                          dt)
+                should use channel for the pushing tasks!!
+                check_schedule(next_q_proc, () -> union!(next_q, triggered_agents))
+                check_schedule(push_q_proc, () -> append!(push_q, signals_acceptors))
+            end
+            schedule(task)
+            task
+        end
+
+        foreach 
+
+        
+        for adrs in current_q
+            triggered_agents, signals_acceptors = act(adrs,
+                                                      get_agent(network ,adrs),
+                                                      dt)
+            union!(next_q, triggered_agents)
+            append!(push_q, signals_acceptors)
+        end
+        
+
+            
+        accept_proc = @async for st in push_q
+            for adrs in st[2]
+                accept(get_agent(network, adrs), st[1])
+            end
+        end
+        schedule(accept_proc)
+        wait(accept_proc)
+        
         current_q = next_q
         t += dt
         index += 1
@@ -201,21 +259,12 @@ function serial_simulate(total_t::T,
         next_q = Set{Address{U}}([])
         push_q = Vector{Tuple{Signal, Vector{Address{U}}}}([])
 
-        # store record here
         df[index, "t"] = t
         for adrs in recording_agents
             for (k, v) in state_dict(get_agent(network, adrs))
                 df[index, col_name(adrs, k)] = v
             end
         end
-
-        # function trigger(address::Address{U})
-        #     push!(next_q, address)
-        # end
-        
-        # function push_signal(address::Address{U}, signal::Signal)
-        #     accept(get_agent(network, address), signal)
-        # end
 
         for adrs in current_q
             triggered_agents, signals_acceptors = act(adrs,
