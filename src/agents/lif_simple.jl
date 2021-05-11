@@ -11,12 +11,12 @@ import ...Signals: add_acceptor, add_donor, can_add_acceptor, can_add_donor, acc
 
 struct LIFSimpleParams{T <: AbstractFloat}
     lif::LIFParams{T}
-    delta_v::T
+    fire_delta_v::T
 end
 
 mutable struct LIFSimpleStates{T <: AbstractFloat}
     lif::LIFStates{T}
-    sum_delta_v::T    
+    accepted_delta_v::T    
 end
 
 function LIFSimpleStates(v::T,
@@ -54,11 +54,11 @@ function act(address::Address, # self address.
     fired, triggered, new_lif_states = evolve(dt,
                                               agent.states.lif,
                                               agent.params.lif,
-                                              agent.states.sum_delta_v)
+                                              agent.states.accepted_delta_v)
     triggered_agents = Set{Address{U}}([])
     signals_acceptors = Vector{Tuple{Signal, Vector{Address{U}}}}([])
     if fired
-        signal = DeltaV(agent.params.delta_v)
+        signal = DeltaV(agent.params.fire_delta_v)
         push!(signals_acceptors, (signal, agent.acceptors_delta_v))
         union!(triggered_agents, Set(agent.acceptors_delta_v))
     end
@@ -72,13 +72,12 @@ function act(address::Address, # self address.
 end
 
 function accept(agent::LIFSimpleAgent{T, U}, signal::DeltaV{T}) where{T <: AbstractFloat, U <: Unsigned}
-    agent.states.sum_delta_v += signal.delta_v
+    agent.states.accepted_delta_v += signal.delta_v
 end
 
 function accept(agent::LIFSimpleAgent{T, U},
                 signal::DCInstruction{T}) where{T <: AbstractFloat, U <: Unsigned}
     update_dc(agent.states.lif, agent.params.lif, signal)
-    println("LIFSimple accept DCInstruction!")
 end
 
 function can_add_donor(agent::LIFSimpleAgent{T, U},
