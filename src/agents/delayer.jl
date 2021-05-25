@@ -1,5 +1,5 @@
 using ...Network
-import ...Network: act, update, state_dict, accept
+import ...Network: act, state_dict, accept
 using ...Signals
 
 struct DelayerAgent{T <: AbstractFloat, U <: Unsigned, V <: Signal}
@@ -16,7 +16,7 @@ function DelayerAgent(
     donor::Address{U},
     acceptor::Address{U},
     signal_name::String,
-    network::Dict{String, Population{U, T}}
+    network::Dict{String, Population{U}}
 ) where {T <: AbstractFloat, U <: Unsigned, V <: ForwardSignal}
     donor_check = can_add_acceptor(get_agent(network, donor), signal_name)
     acceptor_check = can_add_donor(get_agent(network, acceptor), signal_name)

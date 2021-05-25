@@ -61,10 +61,10 @@ function can_add_donor end
 function add_acceptor end # (agent, signal_name, acptr_address) -> ()
 function add_donor end # (agent, signal_name, dnr_address) -> ()
 
-function connect(network::Dict{String, Population{U, T}},
+function connect(network::Dict{String, Population{T}},
                  signal_name::String,
                  donor_address::Address,
-                 acceptor_address::Address) where {T <: AbstractFloat, U <: Unsigned}
+                 acceptor_address::Address) where {T <: Unsigned}
     dnr = get_agent(network, donor_address)
     acptr = get_agent(network, acceptor_address)
     if can_add_acceptor(dnr, signal_name) && can_add_donor(acptr, signal_name)
