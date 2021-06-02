@@ -95,9 +95,10 @@ function col_name(adrs::Address, state_name::String)
     "$(adrs.population)_$(adrs.num)_$(state_name)"
 end
 
-function init_df{V}(network::Dict{String, Population{T}},
-                    recording_agents::Set{Address{T}},
-                    total_steps::T) where {T <: Unsigned, V <: AbstractFloat}
+function init_df(network::Dict{String, Population{T}},
+                 recording_agents::Set{Address{T}},
+                 total_steps::T,
+                 tp::DataType) where {T <: Unsigned}
     col_names = reduce((acc, adrs) -> [acc;
                                        reduce((acc, x) -> [acc; [col_name(adrs, x[1])]],
                                               state_dict(get_agent(network, adrs)),
@@ -106,7 +107,7 @@ function init_df{V}(network::Dict{String, Population{T}},
                        init = ["t"])
     df = DataFrame()
     for name in col_names
-        df[!, name] = repeat([zero(V)], total_steps)
+        df[!, name] = repeat([zero(tp)], total_steps)
     end
     df
 end
@@ -116,9 +117,8 @@ function async_simulate(total_t::T,
                         network::Dict{String, Population{U}},
                         current_q::Set{Address{U}},
                         recording_agents::Set{Address{U}}) where {T <: AbstractFloat, U <: Unsigned}
-
     total_steps = UInt(fld(total_t, dt)) + 1
-    df = init_df{T}(network, recording_agents, total_steps)
+    df = init_df(network, recording_agents, total_steps, T)
     t = zero(T)
     index = 1
 
@@ -129,7 +129,6 @@ function async_simulate(total_t::T,
         df[index, "t"] = t
         for adrs in recording_agents
             for (k, v) in state_dict(get_agent(network, adrs))
-                println("k: $(col_name(adrs, k)), v: $(v).")
                 df[index, col_name(adrs, k)] = v
             end
         end
@@ -187,7 +186,7 @@ function serial_simulate(total_t::T,
                          recording_agents::Set{Address{U}}) where {T <: AbstractFloat, U <: Unsigned}
     
     total_steps = UInt(fld(total_t, dt)) + 1
-    df = init_df{T}(network, recording_agents, total_steps)
+    df = init_df(network, recording_agents, total_steps, T)
     t = zero(T)
     index = UInt(1)
 
